@@ -1,32 +1,47 @@
-import { AlertTriangle, ArrowLeft, FolderX } from "lucide-react"
-import { Link } from "react-router-dom"
+import { AlertTriangle } from "lucide-react"
 
-import { ProjectHeader } from "@/components/ProjectHeader"
-import { ProjectHistory } from "@/components/ProjectHistory"
-import { ProjectOverview } from "@/components/ProjectOverview"
-import { ProjectRepositories } from "@/components/ProjectRepositories"
-import { ProjectServices } from "@/components/ProjectServices"
-import { ProjectSettings } from "@/components/ProjectSettings"
+import { ProjectHeader } from "@/components/ProjectHeader/ProjectHeader"
+import { ProjectHistory } from "@/components/ProjectHistory/ProjectHistory"
+import { ProjectOverview } from "@/components/ProjectOverview/ProjectOverview"
+import { ProjectRepositories } from "@/components/ProjectRepositories/ProjectRepositories"
+import { ProjectServices } from "@/components/ProjectServices/ProjectServices"
+import { ProjectSettings } from "@/components/ProjectSettings/ProjectSettings"
+import { TemplateEstado } from "@/components/TemplateEstado"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { RetryProps } from "@/lib/types/common"
+import { ProjetoNaoEncontrado } from "@/pages/DetalhesProjeto/components/ProjetoNaoEncontrado/ProjetoNaoEncontrado"
 import { useDetalhesProjeto } from "@/pages/DetalhesProjeto/DetalhesProjeto.hook"
+import { DeleteProjectDialog } from "@/pages/DetalhesProjeto/modais/DeleteProjectDialog/DeleteProjectDialog"
 
 export const DetalhesProjetoPage = () => {
-    const detalhes = useDetalhesProjeto()
+    const { modal, setModal, projeto, isLoading, isError, isFetching, atualizar, tentarNovamente } =
+        useDetalhesProjeto()
 
-    if (detalhes.isLoading) return <DetalhesSkeleton />
-    if (detalhes.isError) return <EstadoErro onRetry={() => void detalhes.tentarNovamente()} />
-    if (!detalhes.projeto) return <ProjetoNaoEncontrado />
+    if (isLoading)
+        return (
+            <TemplateEstado.Carregando
+                skeleton={{ quantidade: 4, orientacao: "vertical" }}
+                className="**:data-[slot=skeleton]:h-32"
+            />
+        )
+    if (isError)
+        return (
+            <TemplateEstado.Erro
+                titulo="Falha ao carregar o projeto"
+                subtitulo="Não foi possível consultar os dados deste projeto."
+                Icon={AlertTriangle}
+                acao={<Button onClick={() => void tentarNovamente()}>Tentar novamente</Button>}
+            />
+        )
+    if (!projeto) return <ProjetoNaoEncontrado />
 
     return (
         <div>
             <ProjectHeader
-                projeto={detalhes.projeto}
-                atualizando={detalhes.isFetching}
-                onAtualizar={() => void detalhes.atualizar()}
+                projeto={projeto}
+                atualizando={isFetching}
+                onAtualizar={() => void atualizar()}
+                onExcluir={() => setModal("excluirProjeto", { open: true })}
             />
             <Tabs defaultValue="visao-geral">
                 <div className="scrollbar-thin mb-4 overflow-x-auto border-b border-border">
@@ -42,66 +57,26 @@ export const DetalhesProjetoPage = () => {
                     </TabsList>
                 </div>
                 <TabsContent value="visao-geral">
-                    <ProjectOverview projeto={detalhes.projeto} />
+                    <ProjectOverview projeto={projeto} />
                 </TabsContent>
                 <TabsContent value="servicos">
-                    <ProjectServices servicos={detalhes.projeto.servicos} />
+                    <ProjectServices servicos={projeto.servicos} />
                 </TabsContent>
                 <TabsContent value="repositorios">
-                    <ProjectRepositories repositorios={detalhes.projeto.repositorios} />
+                    <ProjectRepositories repositorios={projeto.repositorios} />
                 </TabsContent>
                 <TabsContent value="historico">
-                    <ProjectHistory projeto={detalhes.projeto} />
+                    <ProjectHistory projeto={projeto} />
                 </TabsContent>
                 <TabsContent value="configuracoes">
-                    <ProjectSettings projeto={detalhes.projeto} />
+                    <ProjectSettings projeto={projeto} />
                 </TabsContent>
             </Tabs>
+            <DeleteProjectDialog
+                open={modal.excluirProjeto}
+                onClose={() => setModal("excluirProjeto", { open: false })}
+                nomeProjeto={projeto.nome}
+            />
         </div>
     )
 }
-
-const DetalhesSkeleton = () => (
-    <div className="space-y-4">
-        <Skeleton className="h-40 rounded-lg" />
-        <Skeleton className="h-10 rounded-lg" />
-        <div className="grid gap-4 lg:grid-cols-3">
-            <Skeleton className="h-72 lg:col-span-2" />
-            <Skeleton className="h-72" />
-        </div>
-    </div>
-)
-const EstadoErro = ({ onRetry }: RetryProps) => (
-    <Card className="border-destructive/40">
-        <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto size-8 text-destructive" />
-            <h2 className="mt-3 font-medium">Falha ao carregar o projeto</h2>
-            <Button
-                className="mt-4"
-                onClick={onRetry}
-            >
-                Tentar novamente
-            </Button>
-        </CardContent>
-    </Card>
-)
-const ProjetoNaoEncontrado = () => (
-    <Card className="border-dashed">
-        <CardContent className="py-12 text-center">
-            <FolderX className="mx-auto size-8 text-muted-foreground" />
-            <h2 className="mt-3 text-lg font-semibold">Projeto não encontrado</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-                O agrupamento local que você buscou não existe mais.
-            </p>
-            <Button
-                render={<Link to="/projetos" />}
-                nativeButton={false}
-                variant="outline"
-                className="mt-4"
-            >
-                <ArrowLeft />
-                Voltar para projetos
-            </Button>
-        </CardContent>
-    </Card>
-)

@@ -1,5 +1,5 @@
 import type { DestaqueMetrica, MetricCardProps } from "@/components/MetricCard/MetricCard.types"
-import { Sparkline } from "@/components/Sparkline"
+import { Sparkline } from "@/components/Sparkline/Sparkline"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 

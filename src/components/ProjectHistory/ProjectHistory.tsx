@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 import type { ObterProjetos } from "@/backend/api/models/projeto.types"
-import { BarChart } from "@/components/BarChart"
+import { BarChart } from "@/components/BarChart/BarChart"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PERIODOS_MONITORAMENTO } from "@/lib/config/monitoring"

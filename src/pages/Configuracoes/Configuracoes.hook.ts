@@ -6,6 +6,7 @@ import { PREFERENCIAS_INICIAIS } from "@/pages/Configuracoes/Configuracoes.utils
 
 export const useConfiguracoes = () => {
     const [preferencias, setPreferencias] = useState(PREFERENCIAS_INICIAIS)
+
     const alterar = <C extends keyof Preferencias>(campo: C, valor: Preferencias[C]) =>
         setPreferencias((atuais) => ({ ...atuais, [campo]: valor }))
 

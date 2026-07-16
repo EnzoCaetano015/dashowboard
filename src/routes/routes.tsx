@@ -1,8 +1,8 @@
 import { createHashRouter } from "react-router-dom"
 import { lazy, Suspense, type ReactNode } from "react"
 
-import { AppLayout } from "@/components/AppLayout"
-import { Skeleton } from "@/components/ui/skeleton"
+import { AppLayout } from "@/components/AppLayout/AppLayout"
+import { TemplateEstado } from "@/components/TemplateEstado"
 
 const HomePage = lazy(() => import("@/pages/Home/Home").then((modulo) => ({ default: modulo.HomePage })))
 const ProjetosPage = lazy(() =>
@@ -33,10 +33,10 @@ const NaoEncontradoPage = lazy(() =>
 const exibir = (pagina: ReactNode) => (
     <Suspense
         fallback={
-            <div className="space-y-4">
-                <Skeleton className="h-24" />
-                <Skeleton className="h-80" />
-            </div>
+            <TemplateEstado.Carregando
+                skeleton={{ quantidade: 2, orientacao: "vertical" }}
+                className="[&_[data-slot=skeleton]]:h-40"
+            />
         }
     >
         {pagina}

@@ -2,20 +2,32 @@ import { AlertCircle, CheckCircle2, Clock, ExternalLink, Search } from "lucide-r
 import { Link } from "react-router-dom"
 
 import { Enum } from "@/backend/api/enums/enum"
-import { IncidentStatus } from "@/components/ProjectStatusDetails"
+import { IncidentStatus } from "@/components/ProjectStatusDetails/ProjectStatusDetails"
+import { TemplateEstado } from "@/components/TemplateEstado"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PERIODOS_MONITORAMENTO } from "@/lib/config/monitoring"
 import { cn } from "@/lib/utils"
 import { formatarDuracao } from "@/lib/utils/date"
+import { Resumo } from "@/pages/Incidentes/components/Resumo/Resumo"
 import { useIncidentes } from "@/pages/Incidentes/Incidentes.hook"
-import type { ResumoProps } from "@/pages/Incidentes/Incidentes.types"
 
 export const IncidentesPage = () => {
-    const pagina = useIncidentes()
+    const {
+        periodo,
+        busca,
+        incidentes,
+        emAndamento,
+        resolvidos,
+        projetosMonitorados,
+        isLoading,
+        isError,
+        setPeriodo,
+        setBusca,
+        tentarNovamente,
+    } = useIncidentes()
 
     return (
         <div>
@@ -30,60 +42,57 @@ export const IncidentesPage = () => {
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            value={pagina.busca}
-                            onChange={(evento) => pagina.setBusca(evento.target.value)}
+                            value={busca}
+                            onChange={(evento) => setBusca(evento.target.value)}
                             placeholder="Buscar incidente…"
                             className="h-9 bg-surface-2 pl-8"
                         />
                     </div>
                     <div className="inline-flex rounded-md border border-border bg-surface-2 p-0.5">
-                        {PERIODOS_MONITORAMENTO.map((periodo) => (
+                        {PERIODOS_MONITORAMENTO.map((periodoMonitoramento) => (
                             <Button
-                                key={periodo}
+                                key={periodoMonitoramento}
                                 size="xs"
                                 variant="ghost"
-                                onClick={() => pagina.setPeriodo(periodo)}
+                                onClick={() => setPeriodo(periodoMonitoramento)}
                                 className={cn(
-                                    pagina.periodo === periodo && "bg-primary/20 text-primary"
+                                    periodo === periodoMonitoramento && "bg-primary/20 text-primary"
                                 )}
                             >
-                                {periodo} dias
+                                {periodoMonitoramento} dias
                             </Button>
                         ))}
                     </div>
                 </div>
             </div>
-            {pagina.isLoading ? (
-                <Skeleton className="h-96 rounded-lg" />
-            ) : pagina.isError ? (
-                <Card className="border-destructive/40">
-                    <CardContent className="py-12 text-center">
-                        <AlertCircle className="mx-auto size-8 text-destructive" />
-                        <h2 className="mt-3 font-medium">Falha ao carregar incidentes</h2>
-                        <Button
-                            className="mt-4"
-                            onClick={() => void pagina.tentarNovamente()}
-                        >
-                            Tentar novamente
-                        </Button>
-                    </CardContent>
-                </Card>
+            {isLoading ? (
+                <TemplateEstado.Carregando
+                    skeleton={{ quantidade: 1, orientacao: "vertical" }}
+                    className="**:data-[slot=skeleton]:h-96"
+                />
+            ) : isError ? (
+                <TemplateEstado.Erro
+                    titulo="Falha ao carregar incidentes"
+                    subtitulo="Não foi possível consultar os incidentes registrados."
+                    Icon={AlertCircle}
+                    acao={<Button onClick={() => void tentarNovamente()}>Tentar novamente</Button>}
+                />
             ) : (
                 <>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         <Resumo
                             titulo="Total"
-                            valor={pagina.incidentes.length}
+                            valor={incidentes.length}
                             classe="text-info"
                         />
                         <Resumo
                             titulo="Em andamento"
-                            valor={pagina.emAndamento}
+                            valor={emAndamento}
                             classe="text-destructive"
                         />
                         <Resumo
                             titulo="Resolvidos"
-                            valor={pagina.resolvidos}
+                            valor={resolvidos}
                             classe="text-success"
                         />
                     </div>
@@ -101,7 +110,7 @@ export const IncidentesPage = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {pagina.incidentes.map((incidente) => (
+                                    {incidentes.map((incidente) => (
                                         <TableRow key={incidente.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
@@ -148,27 +157,18 @@ export const IncidentesPage = () => {
                                 </TableBody>
                             </Table>
                         </div>
-                        {pagina.incidentes.length === 0 && (
+                        {incidentes.length === 0 && (
                             <div className="p-10 text-center text-sm text-muted-foreground">
                                 Nenhum incidente encontrado para esta busca.
                             </div>
                         )}
                     </Card>
                     <p className="mt-4 text-xs text-muted-foreground">
-                        {pagina.projetosMonitorados} projetos com incidentes registrados · janela de{" "}
-                        {pagina.periodo} dias.
+                        {projetosMonitorados} projetos com incidentes registrados · janela de {periodo}{" "}
+                        dias.
                     </p>
                 </>
             )}
         </div>
     )
 }
-
-const Resumo = ({ titulo, valor, classe }: ResumoProps) => (
-    <Card className="border-border py-4 shadow-none">
-        <CardContent className="px-4">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">{titulo}</div>
-            <div className={cn("mt-2 text-3xl font-semibold tabular-nums", classe)}>{valor}</div>
-        </CardContent>
-    </Card>
-)

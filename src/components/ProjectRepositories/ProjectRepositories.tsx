@@ -1,8 +1,8 @@
 import { ArrowUpRight, CircleAlert, GitBranch, GitCommit, GitPullRequest } from "lucide-react"
 
 import type { ObterProjetos } from "@/backend/api/models/projeto.types"
-import { ProviderIcon } from "@/components/ProviderIcon"
-import { WorkflowStatus } from "@/components/ProjectStatusDetails"
+import { ProviderIcon } from "@/components/ProviderIcon/ProviderIcon"
+import { WorkflowStatus } from "@/components/ProjectStatusDetails/ProjectStatusDetails"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Enum } from "@/backend/api/enums/enum"

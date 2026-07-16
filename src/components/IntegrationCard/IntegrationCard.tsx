@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Clock, KeyRound, RefreshCw } from "lucide-re
 
 import { Enum } from "@/backend/api/enums/enum"
 import type { ObterIntegracoes } from "@/backend/api/models/integracao.types"
-import { ProviderIcon } from "@/components/ProviderIcon"
+import { ProviderIcon } from "@/components/ProviderIcon/ProviderIcon"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"

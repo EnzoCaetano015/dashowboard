@@ -2,8 +2,9 @@ import { AlertCircle, ChevronRight, Clock, GitBranch, Server } from "lucide-reac
 import { Link } from "react-router-dom"
 
 import type { ProjectCardProps } from "@/components/ProjectCard/ProjectCard.types"
-import { ProviderIcon } from "@/components/ProviderIcon"
-import { StatusBadge, estilosStatus } from "@/components/StatusBadge"
+import { ProviderIcon } from "@/components/ProviderIcon/ProviderIcon"
+import { StatusBadge } from "@/components/StatusBadge/StatusBadge"
+import { estilosStatus } from "@/components/StatusBadge/StatusBadge.utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 

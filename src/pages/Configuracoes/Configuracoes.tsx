@@ -1,15 +1,15 @@
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Campo } from "@/pages/Configuracoes/components/Campo/Campo"
+import { Item } from "@/pages/Configuracoes/components/Item/Item"
+import { Secao } from "@/pages/Configuracoes/components/Secao/Secao"
 import { useConfiguracoes } from "@/pages/Configuracoes/Configuracoes.hook"
-import type { CampoProps, ItemProps, SecaoProps } from "@/pages/Configuracoes/Configuracoes.types"
 
 export const ConfiguracoesPage = () => {
-    const pagina = useConfiguracoes()
-    const p = pagina.preferencias
+    const { preferencias, alterar, simular } = useConfiguracoes()
 
     return (
         <div>
@@ -30,10 +30,8 @@ export const ConfiguracoesPage = () => {
                     >
                         <Checkbox
                             id="iniciar-sistema"
-                            checked={p.iniciarComSistema}
-                            onCheckedChange={(valor) =>
-                                pagina.alterar("iniciarComSistema", Boolean(valor))
-                            }
+                            checked={preferencias.iniciarComSistema}
+                            onCheckedChange={(valor) => alterar("iniciarComSistema", Boolean(valor))}
                         />
                     </Campo>
                     <Campo
@@ -42,8 +40,8 @@ export const ConfiguracoesPage = () => {
                     >
                         <Checkbox
                             id="segundo-plano"
-                            checked={p.segundoPlano}
-                            onCheckedChange={(valor) => pagina.alterar("segundoPlano", Boolean(valor))}
+                            checked={preferencias.segundoPlano}
+                            onCheckedChange={(valor) => alterar("segundoPlano", Boolean(valor))}
                         />
                     </Campo>
                     <Campo
@@ -51,8 +49,10 @@ export const ConfiguracoesPage = () => {
                         controleId="intervalo-padrao"
                     >
                         <Select
-                            value={p.intervalo}
-                            onValueChange={(valor) => pagina.alterar("intervalo", valor ?? p.intervalo)}
+                            value={preferencias.intervalo}
+                            onValueChange={(valor) =>
+                                alterar("intervalo", valor ?? preferencias.intervalo)
+                            }
                         >
                             <SelectTrigger id="intervalo-padrao">
                                 <SelectValue />
@@ -79,14 +79,14 @@ export const ConfiguracoesPage = () => {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => pagina.simular("Abrir pasta")}
+                            onClick={() => simular("Abrir pasta")}
                         >
                             Abrir pasta
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => pagina.simular("Exportar backup")}
+                            onClick={() => simular("Exportar backup")}
                         >
                             Exportar backup
                         </Button>
@@ -102,8 +102,8 @@ export const ConfiguracoesPage = () => {
                     >
                         <Checkbox
                             id="notificacoes-sistema"
-                            checked={p.notificacoes}
-                            onCheckedChange={(valor) => pagina.alterar("notificacoes", Boolean(valor))}
+                            checked={preferencias.notificacoes}
+                            onCheckedChange={(valor) => alterar("notificacoes", Boolean(valor))}
                         />
                     </Campo>
                     <Campo
@@ -112,8 +112,8 @@ export const ConfiguracoesPage = () => {
                     >
                         <Checkbox
                             id="som-incidente"
-                            checked={p.som}
-                            onCheckedChange={(valor) => pagina.alterar("som", Boolean(valor))}
+                            checked={preferencias.som}
+                            onCheckedChange={(valor) => alterar("som", Boolean(valor))}
                         />
                     </Campo>
                     <Campo
@@ -122,8 +122,8 @@ export const ConfiguracoesPage = () => {
                     >
                         <Checkbox
                             id="badge-icone"
-                            checked={p.badge}
-                            onCheckedChange={(valor) => pagina.alterar("badge", Boolean(valor))}
+                            checked={preferencias.badge}
+                            onCheckedChange={(valor) => alterar("badge", Boolean(valor))}
                         />
                     </Campo>
                 </Secao>
@@ -136,8 +136,8 @@ export const ConfiguracoesPage = () => {
                         controleId="tema"
                     >
                         <Select
-                            value={p.tema}
-                            onValueChange={(valor) => pagina.alterar("tema", valor ?? p.tema)}
+                            value={preferencias.tema}
+                            onValueChange={(valor) => alterar("tema", valor ?? preferencias.tema)}
                         >
                             <SelectTrigger id="tema">
                                 <SelectValue />
@@ -154,8 +154,10 @@ export const ConfiguracoesPage = () => {
                         controleId="densidade"
                     >
                         <Select
-                            value={p.densidade}
-                            onValueChange={(valor) => pagina.alterar("densidade", valor ?? p.densidade)}
+                            value={preferencias.densidade}
+                            onValueChange={(valor) =>
+                                alterar("densidade", valor ?? preferencias.densidade)
+                            }
                         >
                             <SelectTrigger id="densidade">
                                 <SelectValue />
@@ -175,8 +177,8 @@ export const ConfiguracoesPage = () => {
                         <Label htmlFor="nome-desenvolvedor">Nome do desenvolvedor</Label>
                         <Input
                             id="nome-desenvolvedor"
-                            value={p.nome}
-                            onChange={(evento) => pagina.alterar("nome", evento.target.value)}
+                            value={preferencias.nome}
+                            onChange={(evento) => alterar("nome", evento.target.value)}
                         />
                     </div>
                 </Secao>
@@ -203,32 +205,3 @@ export const ConfiguracoesPage = () => {
         </div>
     )
 }
-
-const Secao = ({ titulo, descricao, children }: SecaoProps) => (
-    <Card className="border-border py-5 shadow-none">
-        <CardHeader className="px-5">
-            <CardTitle>
-                <h2 className="text-sm">{titulo}</h2>
-            </CardTitle>
-            <CardDescription>{descricao}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 px-5">{children}</CardContent>
-    </Card>
-)
-const Campo = ({ titulo, controleId, children }: CampoProps) => (
-    <div className="flex items-center justify-between gap-3 text-sm">
-        <Label
-            htmlFor={controleId}
-            className="font-normal text-muted-foreground"
-        >
-            {titulo}
-        </Label>
-        {children}
-    </div>
-)
-const Item = ({ titulo, valor }: ItemProps) => (
-    <div className="flex justify-between">
-        <dt className="text-muted-foreground">{titulo}</dt>
-        <dd className="font-mono">{valor}</dd>
-    </div>
-)

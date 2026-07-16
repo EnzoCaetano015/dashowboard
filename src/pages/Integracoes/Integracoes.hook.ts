@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 
 import { useObterConexoesGitHub } from "@/backend/api/controllers/github"
 import { useObterIntegracoes } from "@/backend/api/controllers/integracao"
@@ -11,74 +11,115 @@ import {
     montarIntegracaoVercel,
 } from "@/pages/Integracoes/Integracoes.utils"
 import { possuiRuntimeTauri } from "@/lib/utils/tauri"
+import { useControlModal } from "@/lib/hooks/useControlModal"
 
 export const useIntegracoes = () => {
-    const [dialogoAtivo, setDialogoAtivo] = useState<Enum.Provider | null>(null)
-    const integrationsQuery = useObterIntegracoes()
-    const githubQuery = useObterConexoesGitHub()
-    const vercelQuery = useObterConexaoVercel()
-    const supabaseQuery = useObterConexaoSupabase()
-    const supabaseProjectsQuery = useObterProjetosSupabase(Boolean(supabaseQuery.data))
+    const { modal, setModal } = useControlModal([
+        "integracaoGitHub",
+        "integracaoVercel",
+        "integracaoSupabase",
+    ] as const)
+    const {
+        data: integracoesBase,
+        isLoading: integracoesIsLoading,
+        isError: integracoesIsError,
+        refetch: tentarNovamente,
+    } = useObterIntegracoes()
+    const {
+        data: conexoesGitHub,
+        isLoading: githubIsLoading,
+        isError: githubIsError,
+        error: githubError,
+    } = useObterConexoesGitHub()
+    const {
+        data: conexaoVercel,
+        isLoading: vercelIsLoading,
+        isError: vercelIsError,
+        error: vercelError,
+    } = useObterConexaoVercel()
+    const {
+        data: conexaoSupabase,
+        isLoading: supabaseIsLoading,
+        isError: supabaseIsError,
+        error: supabaseError,
+    } = useObterConexaoSupabase()
+    const {
+        data: projetosSupabase,
+        isError: projetosSupabaseIsError,
+        error: projetosSupabaseError,
+    } = useObterProjetosSupabase(Boolean(conexaoSupabase))
     const runtimeDisponivel = possuiRuntimeTauri()
 
     const integracoes = useMemo(
         () => [
-            montarIntegracaoGitHub(githubQuery.data ?? [], {
+            montarIntegracaoGitHub(conexoesGitHub ?? [], {
                 runtimeDisponivel,
-                isLoading: githubQuery.isLoading,
-                isError: githubQuery.isError,
-                error: githubQuery.error,
+                isLoading: githubIsLoading,
+                isError: githubIsError,
+                error: githubError,
             }),
-            montarIntegracaoVercel(vercelQuery.data ?? null, {
+            montarIntegracaoVercel(conexaoVercel ?? null, {
                 runtimeDisponivel,
-                isLoading: vercelQuery.isLoading,
-                isError: vercelQuery.isError,
-                error: vercelQuery.error,
+                isLoading: vercelIsLoading,
+                isError: vercelIsError,
+                error: vercelError,
             }),
             montarIntegracaoSupabase(
-                supabaseQuery.data ?? null,
-                supabaseProjectsQuery.data,
+                conexaoSupabase ?? null,
+                projetosSupabase,
                 {
                     runtimeDisponivel,
-                    isLoading: supabaseQuery.isLoading,
-                    isError: supabaseQuery.isError,
-                    error: supabaseQuery.error,
+                    isLoading: supabaseIsLoading,
+                    isError: supabaseIsError,
+                    error: supabaseError,
                 },
                 {
-                    isError: supabaseProjectsQuery.isError,
-                    error: supabaseProjectsQuery.error,
+                    isError: projetosSupabaseIsError,
+                    error: projetosSupabaseError,
                 }
             ),
-            ...(integrationsQuery.data ?? []),
+            ...(integracoesBase ?? []),
         ],
         [
-            githubQuery.data,
-            githubQuery.error,
-            githubQuery.isError,
-            githubQuery.isLoading,
-            integrationsQuery.data,
+            conexaoSupabase,
+            conexaoVercel,
+            conexoesGitHub,
+            githubError,
+            githubIsError,
+            githubIsLoading,
+            integracoesBase,
+            projetosSupabase,
+            projetosSupabaseError,
+            projetosSupabaseIsError,
             runtimeDisponivel,
-            supabaseProjectsQuery.data,
-            supabaseProjectsQuery.error,
-            supabaseProjectsQuery.isError,
-            supabaseQuery.data,
-            supabaseQuery.error,
-            supabaseQuery.isError,
-            supabaseQuery.isLoading,
-            vercelQuery.data,
-            vercelQuery.error,
-            vercelQuery.isError,
-            vercelQuery.isLoading,
+            supabaseError,
+            supabaseIsError,
+            supabaseIsLoading,
+            vercelError,
+            vercelIsError,
+            vercelIsLoading,
         ]
     )
 
+    const abrirDialogo = (provider: Enum.Provider) => {
+        if (provider === Enum.Provider.GitHub) {
+            setModal("integracaoGitHub", { open: true })
+        }
+        if (provider === Enum.Provider.Vercel) {
+            setModal("integracaoVercel", { open: true })
+        }
+        if (provider === Enum.Provider.Supabase) {
+            setModal("integracaoSupabase", { open: true })
+        }
+    }
+
     return {
+        modal,
+        setModal,
         integracoes,
-        isLoading: integrationsQuery.isLoading,
-        isError: integrationsQuery.isError,
-        dialogoAtivo,
-        abrirDialogo: (provider: Enum.Provider) => setDialogoAtivo(provider),
-        fecharDialogo: () => setDialogoAtivo(null),
-        tentarNovamente: integrationsQuery.refetch,
+        isLoading: integracoesIsLoading,
+        isError: integracoesIsError,
+        abrirDialogo,
+        tentarNovamente,
     }
 }

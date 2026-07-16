@@ -1,12 +1,21 @@
 import { useObterProjetos } from "@/backend/api/controllers/projeto"
+import { useControlModal } from "@/lib/hooks/useControlModal"
 
 export const useProjetos = () => {
-    const consulta = useObterProjetos()
+    const { modal, setModal } = useControlModal(["novoProjeto"] as const)
+    const {
+        data: projetos = [],
+        isLoading: projetosIsLoading,
+        isError: projetosIsError,
+        refetch: tentarNovamente,
+    } = useObterProjetos()
 
     return {
-        projetos: consulta.data ?? [],
-        isLoading: consulta.isLoading,
-        isError: consulta.isError,
-        tentarNovamente: consulta.refetch,
+        modal,
+        setModal,
+        projetos,
+        isLoading: projetosIsLoading,
+        isError: projetosIsError,
+        tentarNovamente,
     }
 }

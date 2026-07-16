@@ -1,23 +1,14 @@
-import { ArrowLeft, Clock, ExternalLink, Pencil, RefreshCw, Server } from "lucide-react"
+import { ArrowLeft, Clock, ExternalLink, Pencil, RefreshCw, Server, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import type { ObterProjetos } from "@/backend/api/models/projeto.types"
-import { DeleteProjectDialog } from "@/components/DeleteProjectDialog"
-import { ProviderIcon } from "@/components/ProviderIcon"
-import { StatusBadge } from "@/components/StatusBadge"
+import type { ProjectHeaderProps } from "@/components/ProjectHeader/ProjectHeader.types"
+import { ProviderIcon } from "@/components/ProviderIcon/ProviderIcon"
+import { StatusBadge } from "@/components/StatusBadge/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { labelProvider } from "@/lib/utils/status"
 
-export const ProjectHeader = ({
-    projeto,
-    atualizando,
-    onAtualizar,
-}: {
-    projeto: ObterProjetos.Projeto
-    atualizando: boolean
-    onAtualizar: () => void
-}) => (
+export const ProjectHeader = ({ projeto, atualizando, onAtualizar, onExcluir }: ProjectHeaderProps) => (
     <div className="mb-6">
         <Link
             to="/projetos"
@@ -94,7 +85,15 @@ export const ProjectHeader = ({
                         Abrir aplicação
                     </Button>
                 )}
-                <DeleteProjectDialog nomeProjeto={projeto.nome} />
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-destructive hover:text-destructive"
+                    onClick={onExcluir}
+                >
+                    <Trash2 />
+                    Excluir
+                </Button>
             </div>
         </div>
     </div>

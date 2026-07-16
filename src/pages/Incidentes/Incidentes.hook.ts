@@ -7,8 +7,14 @@ import type { PeriodoMonitoramento } from "@/lib/types/monitoring"
 export const useIncidentes = () => {
     const [periodo, setPeriodo] = useState<PeriodoMonitoramento>(15)
     const [busca, setBusca] = useState("")
-    const consulta = useObterIncidentes()
-    const incidentes = consulta.data ?? []
+
+    const {
+        data: incidentes = [],
+        isLoading: incidentesIsLoading,
+        isError: incidentesIsError,
+        refetch: tentarNovamente,
+    } = useObterIncidentes()
+
     const filtrados = useMemo(() => {
         const termo = busca.trim().toLocaleLowerCase("pt-BR")
         return termo
@@ -29,10 +35,10 @@ export const useIncidentes = () => {
         resolvidos: filtrados.filter((incidente) => incidente.status === Enum.StatusIncidente.Resolvido)
             .length,
         projetosMonitorados: new Set(incidentes.map((incidente) => incidente.projetoId)).size,
-        isLoading: consulta.isLoading,
-        isError: consulta.isError,
+        isLoading: incidentesIsLoading,
+        isError: incidentesIsError,
         setPeriodo,
         setBusca,
-        tentarNovamente: consulta.refetch,
+        tentarNovamente,
     }
 }

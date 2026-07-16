@@ -7,10 +7,3 @@ export type FiltrosHome = {
     tipoServico: Enum.TipoServico | "todos"
     tagRepositorio: Enum.TagRepositorio | "todos"
 }
-
-export type FiltroSelectProps = {
-    value: string
-    placeholder: string
-    onValueChange: (valor: string) => void
-    opcoes: ReadonlyArray<readonly [string, string]>
-}

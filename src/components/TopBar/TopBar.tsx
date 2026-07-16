@@ -1,12 +1,12 @@
-import { useIsFetching, useQueryClient } from "@tanstack/react-query"
+import { useIsFetching } from "@tanstack/react-query"
 import { Bell, Menu, RefreshCw, Search } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import { useObterIntegracoes } from "@/backend/api/controllers/integracao"
 import { Enum } from "@/backend/api/enums/enum"
-import { AppSidebar } from "@/components/AppSidebar"
-import { ProviderIcon } from "@/components/ProviderIcon"
+import { AppSidebar } from "@/components/AppSidebar/AppSidebar"
+import { ProviderIcon } from "@/components/ProviderIcon/ProviderIcon"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -19,13 +19,13 @@ import {
 } from "@/components/ui/sheet"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { queryClient } from "@/lib/config/query-client"
 import { formatarAgora } from "@/lib/utils/date"
 import { labelProvider } from "@/lib/utils/status"
 
 export const TopBar = () => {
     const [busca, setBusca] = useState("")
     const [ultimaAtualizacao, setUltimaAtualizacao] = useState(() => formatarAgora())
-    const queryClient = useQueryClient()
     const consultasAtivas = useIsFetching()
     const { data: integracoes = [] } = useObterIntegracoes()
 

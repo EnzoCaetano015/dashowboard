@@ -1,17 +1,16 @@
 import { AlertCircle } from "lucide-react"
 
-import { Enum } from "@/backend/api/enums/enum"
-import { GitHubIntegrationDialog } from "@/components/GitHubIntegrationDialog"
-import { IntegrationCard } from "@/components/IntegrationCard"
-import { SupabaseIntegrationDialog } from "@/components/SupabaseIntegrationDialog"
-import { VercelIntegrationDialog } from "@/components/VercelIntegrationDialog"
+import { IntegrationCard } from "@/components/IntegrationCard/IntegrationCard"
+import { TemplateEstado } from "@/components/TemplateEstado"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useIntegracoes } from "@/pages/Integracoes/Integracoes.hook"
+import { GitHubIntegrationDialog } from "@/pages/Integracoes/modais/GitHubIntegrationDialog/GitHubIntegrationDialog"
+import { SupabaseIntegrationDialog } from "@/pages/Integracoes/modais/SupabaseIntegrationDialog/SupabaseIntegrationDialog"
+import { VercelIntegrationDialog } from "@/pages/Integracoes/modais/VercelIntegrationDialog/VercelIntegrationDialog"
 
 export const IntegracoesPage = () => {
-    const pagina = useIntegracoes()
+    const { modal, setModal, integracoes, isLoading, isError, abrirDialogo, tentarNovamente } =
+        useIntegracoes()
 
     return (
         <div>
@@ -21,57 +20,41 @@ export const IntegracoesPage = () => {
                     Conecte contas e tokens para o DashwoBoard ler o estado dos seus recursos.
                 </p>
             </div>
-            {pagina.isLoading ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                    {Array.from({ length: 4 }, (_, indice) => (
-                        <Skeleton
-                            key={indice}
-                            className="h-56 rounded-lg"
-                        />
-                    ))}
-                </div>
-            ) : pagina.isError ? (
-                <Card className="border-destructive/40">
-                    <CardContent className="py-12 text-center">
-                        <AlertCircle className="mx-auto size-8 text-destructive" />
-                        <h2 className="mt-3 font-medium">Falha ao carregar integrações</h2>
-                        <Button
-                            className="mt-4"
-                            onClick={() => void pagina.tentarNovamente()}
-                        >
-                            Tentar novamente
-                        </Button>
-                    </CardContent>
-                </Card>
+            {isLoading ? (
+                <TemplateEstado.Carregando
+                    skeleton={{ quantidade: 4, orientacao: "horizontal" }}
+                    className="**:data-[slot=skeleton]:h-56 **:data-[slot=template-estado-skeletons]:md:grid-cols-2"
+                />
+            ) : isError ? (
+                <TemplateEstado.Erro
+                    titulo="Falha ao carregar integrações"
+                    subtitulo="Não foi possível consultar as integrações configuradas."
+                    Icon={AlertCircle}
+                    acao={<Button onClick={() => void tentarNovamente()}>Tentar novamente</Button>}
+                />
             ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                    {pagina.integracoes.map((integracao) => (
+                    {integracoes.map((integracao) => (
                         <IntegrationCard
                             key={integracao.provider}
                             integracao={integracao}
-                            onTestar={() => pagina.abrirDialogo(integracao.provider)}
-                            onConfigurar={() => pagina.abrirDialogo(integracao.provider)}
+                            onTestar={() => abrirDialogo(integracao.provider)}
+                            onConfigurar={() => abrirDialogo(integracao.provider)}
                         />
                     ))}
                 </div>
             )}
             <GitHubIntegrationDialog
-                open={pagina.dialogoAtivo === Enum.Provider.GitHub}
-                onOpenChange={(open) =>
-                    open ? pagina.abrirDialogo(Enum.Provider.GitHub) : pagina.fecharDialogo()
-                }
+                open={modal.integracaoGitHub}
+                onClose={() => setModal("integracaoGitHub", { open: false })}
             />
             <VercelIntegrationDialog
-                open={pagina.dialogoAtivo === Enum.Provider.Vercel}
-                onOpenChange={(open) =>
-                    open ? pagina.abrirDialogo(Enum.Provider.Vercel) : pagina.fecharDialogo()
-                }
+                open={modal.integracaoVercel}
+                onClose={() => setModal("integracaoVercel", { open: false })}
             />
             <SupabaseIntegrationDialog
-                open={pagina.dialogoAtivo === Enum.Provider.Supabase}
-                onOpenChange={(open) =>
-                    open ? pagina.abrirDialogo(Enum.Provider.Supabase) : pagina.fecharDialogo()
-                }
+                open={modal.integracaoSupabase}
+                onClose={() => setModal("integracaoSupabase", { open: false })}
             />
         </div>
     )

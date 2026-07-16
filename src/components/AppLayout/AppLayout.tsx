@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom"
 
-import { AppSidebar } from "@/components/AppSidebar"
-import { TopBar } from "@/components/TopBar"
+import { AppSidebar } from "@/components/AppSidebar/AppSidebar"
+import { TopBar } from "@/components/TopBar/TopBar"
 
 export const AppLayout = () => (
     <div className="dark flex h-dvh w-full overflow-hidden bg-background text-foreground">
