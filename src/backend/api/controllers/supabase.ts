@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 
+import { useObterPreferencias } from "@/backend/api/controllers/preferencias"
 import {
     obterConexaoSupabase,
     obterProjetosSupabase,
@@ -8,7 +9,7 @@ import {
     testarConexaoSupabase,
 } from "@/backend/api/integrations/supabase"
 import { SupabaseQueryKeys, type SalvarConexaoSupabase } from "@/backend/api/models/supabase.types"
-import { INTERVALO_ATUALIZACAO_SUPABASE } from "@/lib/config/monitoring"
+import { obterConfiguracaoMonitoramento } from "@/lib/config/monitoring"
 import { queryClient } from "@/lib/config/query-client"
 import { deveTentarNovamenteSupabase } from "@/lib/utils/supabase"
 import { possuiRuntimeTauri } from "@/lib/utils/tauri"
@@ -49,6 +50,10 @@ export const useRemoverConexaoSupabase = () => {
 }
 
 export const useObterProjetosSupabase = (enabled = true) => {
+    const { data: preferencias } = useObterPreferencias()
+    const { intervaloAtualizacao, verificacaoSegundoPlano } =
+        obterConfiguracaoMonitoramento(preferencias)
+
     return useQuery({
         queryKey: [SupabaseQueryKeys.Projetos],
         queryFn: async () => {
@@ -58,8 +63,8 @@ export const useObterProjetosSupabase = (enabled = true) => {
         },
         enabled: enabled && possuiRuntimeTauri(),
         staleTime: 1000 * 30,
-        refetchInterval: INTERVALO_ATUALIZACAO_SUPABASE,
-        refetchIntervalInBackground: true,
+        refetchInterval: intervaloAtualizacao,
+        refetchIntervalInBackground: verificacaoSegundoPlano,
         refetchOnReconnect: true,
         retry: deveTentarNovamenteSupabase,
     })

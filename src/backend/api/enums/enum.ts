@@ -69,4 +69,21 @@ export namespace Enum {
         Pessoal = "personal",
         Organizacao = "organization",
     }
+
+    export enum TemaAplicacao {
+        Escuro = "dark",
+        Claro = "light",
+        Sistema = "system",
+    }
+
+    export enum DensidadeAplicacao {
+        Confortavel = "comfortable",
+        Compacta = "compact",
+    }
+
+    export enum IntervaloAtualizacao {
+        TrintaSegundos = 30,
+        UmMinuto = 60,
+        CincoMinutos = 300,
+    }
 }

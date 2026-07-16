@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 
+import { useObterPreferencias } from "@/backend/api/controllers/preferencias"
 import {
     obterConexoesGitHub,
     obterRepositoriosGitHub,
@@ -14,7 +15,7 @@ import type {
     TestarConexaoGitHub,
 } from "@/backend/api/models/github.types"
 import { GitHubQueryKeys } from "@/backend/api/models/github.types"
-import { TEMPO_CACHE_REPOSITORIOS_GITHUB } from "@/lib/config/monitoring"
+import { obterConfiguracaoMonitoramento, TEMPO_CACHE_REPOSITORIOS_GITHUB } from "@/lib/config/monitoring"
 import { queryClient } from "@/lib/config/query-client"
 import { deveTentarNovamenteGitHub } from "@/lib/utils/github"
 import { possuiRuntimeTauri } from "@/lib/utils/tauri"
@@ -62,11 +63,17 @@ export const useObterRepositoriosGitHub = (
     request: ObterRepositoriosGitHub.Request = {},
     enabled = true
 ) => {
+    const { data: preferencias } = useObterPreferencias()
+    const { intervaloAtualizacao, verificacaoSegundoPlano } =
+        obterConfiguracaoMonitoramento(preferencias)
+
     return useQuery({
         queryKey: [GitHubQueryKeys.Repositorios, request.connectionIds ?? []],
         queryFn: () => obterRepositoriosGitHub(request),
         enabled: enabled && possuiRuntimeTauri(),
         staleTime: TEMPO_CACHE_REPOSITORIOS_GITHUB,
+        refetchInterval: intervaloAtualizacao,
+        refetchIntervalInBackground: verificacaoSegundoPlano,
         refetchOnReconnect: true,
         retry: deveTentarNovamenteGitHub,
     })

@@ -6,6 +6,8 @@ Todo código novo deve parecer que já fazia parte do projeto. Antes de alterar 
 
 Não invente outra arquitetura, não mova arquivos sem necessidade e não faça refatorações fora do escopo solicitado.
 
+O estado atual do código é o padrão absoluto do projeto. Exemplos antigos, documentação desatualizada e padrões genéricos não devem reintroduzir estruturas que já foram removidas. Quando houver divergência, confirme a organização real do repositório e siga o padrão vigente documentado neste arquivo.
+
 ---
 
 ## 2. Contexto do projeto
@@ -56,6 +58,11 @@ O aplicativo não possui login próprio. Tokens de integração são configuraç
 13. Não faça refatoração oportunista de arquivos não relacionados.
 14. Preserve a compatibilidade com o aplicativo Tauri empacotado.
 15. Quando houver dúvida de contrato de uma API externa, não invente campos: valide o contrato antes de implementar.
+16. Sempre destruture o retorno de hooks; não armazene o objeto inteiro retornado pelo hook.
+17. Não crie `index.ts` para pastas que expõem um único item.
+18. Modais específicos pertencem à página que os utiliza e devem usar o componente `Modal` e o hook `useControlModal`.
+19. Componentes usados por uma única página pertencem à pasta `components` dessa página.
+20. Estados de carregamento e erro devem usar `TemplateEstado` em todo o projeto.
 
 ---
 
@@ -162,12 +169,13 @@ A estrutura canônica do frontend é:
 
 ```txt
 src/
-  api/
-    controllers/
-    enums/
-      enum.ts
-    integrations/
-    models/
+  backend/
+    api/
+      controllers/
+      enums/
+        enum.ts
+      integrations/
+      models/
 
   assets/
 
@@ -177,6 +185,13 @@ src/
       NomeDoComponente.tsx
       NomeDoComponente.types.ts
       NomeDoComponente.utils.ts
+    Modal/
+      Modal.tsx
+      Modal.types.ts
+      index.ts
+    TemplateEstado/
+      TemplateEstado.tsx
+      TemplateEstado.types.ts
       index.ts
 
   lib/
@@ -192,7 +207,15 @@ src/
       NomeDaPagina.schema.ts
       NomeDaPagina.types.ts
       NomeDaPagina.utils.ts
-      index.ts
+      components/
+        ComponenteLocal/
+          ComponenteLocal.tsx
+          ComponenteLocal.types.ts
+      modais/
+        NomeDoModal/
+          NomeDoModal.tsx
+          NomeDoModal.hook.ts
+          NomeDoModal.types.ts
 
   routes/
     routes.tsx
@@ -225,7 +248,7 @@ fora das camadas já definidas, salvo alteração arquitetural explicitamente ap
 
 ## 6. Responsabilidade de cada camada
 
-### `src/api/controllers`
+### `src/backend/api/controllers`
 
 Contém hooks do TanStack Query.
 
@@ -235,7 +258,7 @@ Responsabilidades:
 - definir query keys;
 - definir intervalos de refetch;
 - controlar `enabled`, retry e cache;
-- chamar funções de `src/api/integrations`;
+- chamar funções de `src/backend/api/integrations`;
 - expor dados tipados para hooks de página e componentes;
 - invalidar queries após alterações locais relevantes.
 
@@ -248,17 +271,17 @@ Não deve:
 - conter detalhes de HTTP de cada provider;
 - conter regra visual.
 
-### `src/api/integrations`
+### `src/backend/api/integrations`
 
 Contém clientes e funções puras de integração com APIs externas.
 
 Um arquivo por provider ou domínio:
 
 ```txt
-src/api/integrations/github.ts
-src/api/integrations/vercel.ts
-src/api/integrations/railway.ts
-src/api/integrations/supabase.ts
+src/backend/api/integrations/github.ts
+src/backend/api/integrations/vercel.ts
+src/backend/api/integrations/railway.ts
+src/backend/api/integrations/supabase.ts
 ```
 
 Responsabilidades:
@@ -289,7 +312,7 @@ obterServicosRailway
 obterStatusSupabase
 ```
 
-### `src/api/models`
+### `src/backend/api/models`
 
 Contém contratos de request, response e modelos normalizados das integrações.
 
@@ -319,7 +342,7 @@ export namespace ObterServicosRailway {
 
 Não espalhar tipos de API dentro de páginas, componentes ou controllers.
 
-### `src/api/enums/enum.ts`
+### `src/backend/api/enums/enum.ts`
 
 Todos os enums conhecidos do projeto ficam em um único arquivo e dentro do namespace `Enum`.
 
@@ -342,13 +365,6 @@ export namespace Enum {
         Desconhecido = "desconhecido",
     }
 
-    export enum QueryKey {
-        Projetos = "projetos",
-        RepositoriosGitHub = "repositorios_github",
-        ProjetoVercel = "projeto_vercel",
-        ProjetoRailway = "projeto_railway",
-        ProjetoSupabase = "projeto_supabase",
-    }
 }
 ```
 
@@ -357,7 +373,8 @@ Regras:
 - não criar outro arquivo de enum;
 - não declarar enum dentro de componente;
 - não usar string solta quando o valor pertencer a um conjunto conhecido;
-- query keys devem partir de `Enum.QueryKey`.
+- query keys não pertencem ao enum global;
+- cada domínio deve declarar seu enum de query keys no respectivo arquivo `*.types.ts`, como `ProjetoQueryKeys`, `GitHubQueryKeys` ou `SupabaseQueryKeys`.
 
 ### `src/sql`
 
@@ -451,7 +468,7 @@ Optional<T>
 SelectOption<T>
 ```
 
-Tipos de request e response externos ficam em `src/api/models`.
+Tipos de request e response externos ficam em `src/backend/api/models`.
 
 Tipos exclusivos de SQL ficam em `src/sql/models`.
 
@@ -484,7 +501,13 @@ src/pages/DetalhesProjeto/
   DetalhesProjeto.hook.ts
   DetalhesProjeto.types.ts
   DetalhesProjeto.utils.ts
-  index.ts
+  components/
+    ProjetoNaoEncontrado/
+      ProjetoNaoEncontrado.tsx
+  modais/
+    DeleteProjectDialog/
+      DeleteProjectDialog.tsx
+      DeleteProjectDialog.types.ts
 ```
 
 Responsabilidades da página:
@@ -500,9 +523,21 @@ A página não deve:
 - executar SQL;
 - montar query do TanStack Query;
 - conter regra de negócio pesada no JSX;
-- conter grandes blocos de transformação de dados.
+- conter grandes blocos de transformação de dados;
+- declarar componentes auxiliares abaixo ou acima do componente da página;
+- declarar constantes, tipos ou helpers que pertencem a arquivos `.types.ts` ou `.utils.ts`.
 
 Toda lógica específica da página deve ficar em `NomeDaPagina.hook.ts` ou `NomeDaPagina.utils.ts`.
+
+Componentes simples usados apenas por uma página devem ser separados dentro da própria página:
+
+```txt
+src/pages/Incidentes/components/Resumo/
+  Resumo.tsx
+  Resumo.types.ts
+```
+
+Não mover um componente exclusivo da página para `src/components`. Ele só se torna global quando houver reutilização real em mais de uma página.
 
 ### `src/components`
 
@@ -515,12 +550,33 @@ components/ProjetoCard/
   ProjetoCard.tsx
   ProjetoCard.types.ts
   ProjetoCard.utils.ts
-  index.ts
 ```
 
 Nem todo componente precisa de `.types.ts` ou `.utils.ts`. Crie apenas quando necessário.
 
 Não criar arquivos de estilo.
+
+### Arquivos `index.ts`
+
+Não criar `index.ts` quando a pasta exportar apenas um componente, hook, type ou utilitário. Nesses casos, importe diretamente o arquivo:
+
+```ts
+import { ProjectCard } from "@/components/ProjectCard/ProjectCard"
+```
+
+O `index.ts` só é permitido quando a pasta possui múltiplos itens públicos que formam uma API composta por namespace. Exemplos atuais:
+
+```ts
+import { Modal } from "@/components/Modal"
+import { TemplateEstado } from "@/components/TemplateEstado"
+
+<Modal.Content />
+<Modal.Header />
+<TemplateEstado.Carregando />
+<TemplateEstado.Erro />
+```
+
+Não criar barrel genérico apenas para encurtar import.
 
 ### `src/components/ui`
 
@@ -559,7 +615,7 @@ Padrão:
 ```ts
 export const useObterRepositoriosGitHub = (owner: string) => {
     return useQuery({
-        queryKey: [Enum.QueryKey.RepositoriosGitHub, owner],
+        queryKey: [GitHubQueryKeys.Repositorios, owner],
         queryFn: () => obterRepositoriosGitHub({ owner }),
         enabled: Boolean(owner),
         staleTime: TEMPO_CACHE_METADADOS,
@@ -572,6 +628,7 @@ export const useObterRepositoriosGitHub = (owner: string) => {
 Regras:
 
 - query key sempre deve incluir parâmetros que mudam o resultado;
+- o enum da query key deve ficar no arquivo de tipos do próprio domínio;
 - use `enabled` quando IDs ou tokens ainda não estiverem disponíveis;
 - não use `queryKey` com string literal;
 - `queryFn` deve retornar dados e não manipular interface;
@@ -621,7 +678,7 @@ Use:
 
 ```ts
 await queryClient.invalidateQueries({
-    queryKey: [Enum.QueryKey.Projetos, projectId],
+    queryKey: [ProjetoQueryKeys.ObterProjetoPorId, projectId],
 })
 ```
 
@@ -836,7 +893,19 @@ Regras:
 
 ## 11. Páginas e hooks de página
 
-Padrão:
+### Desestruturação obrigatória
+
+Todo hook que retorna objeto deve ser destruturado no ponto de uso. Nunca mantenha o retorno completo em uma variável intermediária.
+
+Errado:
+
+```tsx
+const home = useHome()
+const dialog = useGitHubIntegrationDialog()
+const consulta = useObterIncidentes()
+```
+
+Certo para hooks de página e hooks utilitários:
 
 ```tsx
 export const ProjetosPage = () => {
@@ -853,6 +922,34 @@ export const ProjetosPage = () => {
 }
 ```
 
+Certo para queries do TanStack Query:
+
+```tsx
+const {
+    data: consulta,
+    isLoading: consultaIsLoading,
+    isError: consultaIsError,
+    refetch: tentarNovamente,
+} = useObterIncidentes()
+```
+
+Certo para mutations:
+
+```tsx
+const {
+    mutateAsync: salvarConexao,
+    isPending: salvarConexaoIsPending,
+} = useSalvarConexaoGitHub()
+```
+
+Regras de nomenclatura:
+
+- renomear `data` para o dado de domínio consumido pela tela;
+- renomear `isLoading`, `isFetching`, `isError` e `isPending` com o mesmo prefixo quando houver mais de uma operação no hook;
+- renomear `mutateAsync` para a ação executada;
+- destructuring vale também para hooks de modal, diálogo, formulário, navegação e hooks utilitários que retornam objetos;
+- não acessar valores por `home.projetos`, `dialog.open` ou `consulta.data`.
+
 O hook de página concentra:
 
 - queries e mutations usadas pela tela;
@@ -867,6 +964,38 @@ O hook de página concentra:
 Não colocar lógica complexa acima do `return` da página.
 
 Quando a transformação for pura e reutilizável, mover para `.utils.ts`.
+
+### Modais de página
+
+Todo modal específico deve permanecer junto da página que o utiliza:
+
+```txt
+src/pages/Integracoes/modais/GitHubIntegrationDialog/
+  GitHubIntegrationDialog.tsx
+  GitHubIntegrationDialog.hook.ts
+  GitHubIntegrationDialog.types.ts
+```
+
+Regras obrigatórias:
+
+- montar a estrutura visual com a API composta de `@/components/Modal`;
+- controlar abertura e fechamento com `useControlModal`;
+- a página ou o hook da página decide quando abrir e fechar;
+- a página renderiza o modal dentro da própria árvore JSX;
+- lógica específica do modal fica no hook ao lado do modal;
+- não criar componente global para um modal usado por apenas uma página;
+- não controlar vários modais com estados booleanos independentes quando `useControlModal` resolve o fluxo.
+
+Padrão:
+
+```tsx
+const { modal, setModal } = useControlModal(["novoProjeto"] as const)
+
+<NovoProjeto
+    open={modal.novoProjeto}
+    onClose={() => setModal("novoProjeto", { open: false })}
+/>
+```
 
 ---
 
@@ -998,6 +1127,55 @@ Toda tela que depende de dados deve tratar:
 - vazio;
 - sucesso;
 - dados parciais quando apenas um provider falhar.
+
+### `TemplateEstado`
+
+`TemplateEstado` é o padrão único para estados de carregamento e erro em páginas, modais, etapas de fluxo e fallback de rotas. Não importar ou renderizar `Skeleton` diretamente fora de `TemplateEstado` para representar o carregamento de uma consulta.
+
+Carregamento:
+
+```tsx
+<TemplateEstado.Carregando
+    Icon={Boxes}
+    titulo="Carregando projetos"
+    subtitulo="Consultando seus agrupamentos locais."
+    className="[&_[data-slot=skeleton]]:h-36"
+    skeleton={{
+        quantidade: 6,
+        orientacao: "horizontal",
+    }}
+/>
+```
+
+Regras de `TemplateEstado.Carregando`:
+
+- `skeleton` é obrigatório;
+- `skeleton.quantidade` define quantos skeletons serão exibidos;
+- `skeleton.orientacao` aceita somente `"vertical"` ou `"horizontal"`;
+- `Icon`, `titulo`, `subtitulo` e `className` são opcionais.
+
+Erro:
+
+```tsx
+<TemplateEstado.Erro
+    titulo="Falha ao carregar projetos"
+    subtitulo="Não foi possível consultar os projetos locais."
+    Icon={AlertTriangle}
+    acao={
+        <Button onClick={() => void tentarNovamente()}>
+            Tentar novamente
+        </Button>
+    }
+/>
+```
+
+Regras de `TemplateEstado.Erro`:
+
+- `titulo` e `subtitulo` são obrigatórios;
+- `Icon`, `acao` e `className` são opcionais;
+- a ação deve ser passada como JSX pelo prop `acao`;
+- mensagens específicas retornadas pela integração devem ser usadas como subtítulo quando disponíveis;
+- sempre fornecer fallback quando a mensagem da integração puder ser `undefined`.
 
 Não bloquear todo o projeto porque uma única integração falhou.
 
@@ -1138,21 +1316,24 @@ Não criar novo padrão de alias sem necessidade.
 2. criar `NomeDaPagina.tsx`;
 3. criar `NomeDaPagina.hook.ts` se houver lógica;
 4. criar `.schema.ts`, `.types.ts` ou `.utils.ts` apenas quando necessário;
-5. exportar por `index.ts`;
-6. adicionar rota em `src/routes/routes.tsx`;
-7. reutilizar componentes shadcn e componentes globais.
+5. criar componentes exclusivos em `components/NomeDoComponente` dentro da página;
+6. criar modais exclusivos em `modais/NomeDoModal` dentro da página;
+7. importar a página diretamente, sem criar `index.ts`;
+8. adicionar rota em `src/routes/routes.tsx`;
+9. reutilizar componentes shadcn, `TemplateEstado` e componentes globais.
 
 ### Nova consulta externa
 
 1. confirmar o contrato da API;
-2. criar ou atualizar model em `src/api/models`;
-3. adicionar enums necessários em `src/api/enums/enum.ts`;
-4. criar função pura em `src/api/integrations`;
-5. criar hook TanStack Query em `src/api/controllers`;
-6. definir query key com todos os parâmetros relevantes;
-7. configurar cache e polling em constantes centrais;
-8. tratar erro normalizado;
-9. consumir somente por hook de página ou hook global.
+2. criar ou atualizar model em `src/backend/api/models`;
+3. adicionar enums de domínio em `src/backend/api/enums/enum.ts` quando necessário;
+4. declarar a query key no arquivo `*.types.ts` do domínio;
+5. criar função pura em `src/backend/api/integrations`;
+6. criar hook TanStack Query em `src/backend/api/controllers`;
+7. definir query key com todos os parâmetros relevantes;
+8. configurar cache e polling em constantes centrais;
+9. tratar erro normalizado;
+10. consumir somente por hook de página ou hook global, sempre por destructuring.
 
 ### Nova persistência local
 
@@ -1179,7 +1360,8 @@ Não criar novo padrão de alias sem necessidade.
 3. receber dados e eventos por props;
 4. não acessar API ou SQL diretamente;
 5. criar `.types.ts` e `.utils.ts` somente quando necessário;
-6. exportar por `index.ts`.
+6. importar diretamente o arquivo do componente;
+7. criar `index.ts` somente se o componente expuser uma API composta com múltiplos itens públicos.
 
 ---
 
@@ -1206,9 +1388,15 @@ Nunca fazer sem aprovação explícita:
 - considerar falha de autenticação como serviço offline;
 - considerar deployment concluído como health check bem-sucedido;
 - criar query key com string solta;
+- colocar query keys no enum global `Enum.QueryKey`;
 - criar polling manual com `setInterval` em página;
 - apagar cache para provocar atualização;
 - esconder erro retornando array vazio;
+- armazenar o retorno inteiro de hooks em variáveis como `home`, `dialog` ou `consulta`;
+- criar `index.ts` para uma pasta com apenas um item público;
+- declarar subcomponentes dentro do arquivo principal de uma página;
+- criar modal específico fora da pasta `modais` da página que o utiliza;
+- renderizar `Skeleton` diretamente para estados de carregamento de consultas;
 - refatorar toda a arquitetura durante uma feature pequena;
 - editar arquivos gerados sem necessidade;
 - alterar `src-tauri` por conveniência.
@@ -1224,11 +1412,16 @@ Antes de finalizar, o agente deve:
 3. confirmar que não adicionou dependência sem autorização;
 4. confirmar que não expôs token ou segredo;
 5. confirmar que páginas não chamam API ou SQL diretamente;
-6. confirmar que query keys usam `Enum.QueryKey`;
+6. confirmar que query keys usam o enum do próprio domínio;
 7. confirmar que componentes usam Tailwind e shadcn;
 8. confirmar que não criou `.styles.ts`;
-9. confirmar que erros, loading e vazio foram tratados;
-10. executar os comandos disponíveis no projeto.
+9. confirmar que hooks com retorno em objeto foram destruturados;
+10. confirmar que componentes exclusivos estão em `pages/NomeDaPagina/components`;
+11. confirmar que modais específicos estão em `pages/NomeDaPagina/modais` e usam `useControlModal`;
+12. confirmar que loading e erro usam `TemplateEstado`;
+13. confirmar que `index.ts` existe somente para APIs compostas;
+14. confirmar que erros, loading e vazio foram tratados;
+15. executar os comandos disponíveis no projeto.
 
 Comandos mínimos, quando configurados:
 

@@ -5,6 +5,14 @@
     "windows": ["main"],
     "permissions": [
         "core:default",
+        "core:app:allow-set-app-theme",
+        "core:window:allow-set-badge-count",
+        "core:window:allow-set-overlay-icon",
+        "sql:default",
+        "sql:allow-execute",
+        "opener:default",
+        "autostart:default",
+        "notification:default",
         {
             "identifier": "http:default",
             "allow": [

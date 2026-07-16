@@ -12,6 +12,7 @@ use supabase::commands::{
     obter_conexao_supabase, obter_projetos_supabase, remover_conexao_supabase,
     salvar_conexao_supabase, testar_conexao_supabase,
 };
+use tauri::Manager;
 use vercel::client::VercelClient;
 use vercel::commands::{
     obter_conexao_vercel, obter_projetos_vercel, remover_conexao_vercel, salvar_conexao_vercel,
@@ -24,6 +25,15 @@ pub fn run() {
         .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
+        .setup(|app| {
+            std::fs::create_dir_all(app.path().app_config_dir()?)?;
+            Ok(())
+        })
         .manage(GitHubClient::new())
         .manage(SupabaseClient::new())
         .manage(VercelClient::new())

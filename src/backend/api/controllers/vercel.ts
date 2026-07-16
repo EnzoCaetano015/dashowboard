@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 
+import { useObterPreferencias } from "@/backend/api/controllers/preferencias"
 import {
     obterConexaoVercel,
     obterProjetosVercel,
@@ -8,7 +9,7 @@ import {
     testarConexaoVercel,
 } from "@/backend/api/integrations/vercel"
 import { VercelQueryKeys, type SalvarConexaoVercel } from "@/backend/api/models/vercel.types"
-import { TEMPO_CACHE_PROJETOS_VERCEL } from "@/lib/config/monitoring"
+import { obterConfiguracaoMonitoramento, TEMPO_CACHE_PROJETOS_VERCEL } from "@/lib/config/monitoring"
 import { queryClient } from "@/lib/config/query-client"
 import { possuiRuntimeTauri } from "@/lib/utils/tauri"
 import { deveTentarNovamenteVercel } from "@/lib/utils/vercel"
@@ -53,11 +54,17 @@ export const useRemoverConexaoVercel = () => {
 }
 
 export const useObterProjetosVercel = (enabled = true) => {
+    const { data: preferencias } = useObterPreferencias()
+    const { intervaloAtualizacao, verificacaoSegundoPlano } =
+        obterConfiguracaoMonitoramento(preferencias)
+
     return useQuery({
         queryKey: [VercelQueryKeys.Projetos],
         queryFn: obterProjetosVercel,
         enabled: enabled && possuiRuntimeTauri(),
         staleTime: TEMPO_CACHE_PROJETOS_VERCEL,
+        refetchInterval: intervaloAtualizacao,
+        refetchIntervalInBackground: verificacaoSegundoPlano,
         refetchOnReconnect: true,
         retry: deveTentarNovamenteVercel,
     })
