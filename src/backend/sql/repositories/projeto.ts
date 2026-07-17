@@ -283,9 +283,18 @@ export const criarProjeto = async (request: CriarProjeto.Request): Promise<Criar
     const database = await obterBancoDados()
     const projetoId = crypto.randomUUID()
     const agora = new Date().toISOString()
-    const repositoriosLocais = new Map<string, string>()
+    const repositorios = request.repositorios.map((repositorio) => ({
+        id: crypto.randomUUID(),
+        repositorio,
+    }))
+    const servicos = request.servicos.map((servico) => ({
+        id: crypto.randomUUID(),
+        servico,
+    }))
+    const repositoriosLocais = new Map(
+        repositorios.map(({ id, repositorio }) => [repositorio.externalId, id] as const)
+    )
 
-    await database.execute("BEGIN IMMEDIATE")
     try {
         await database.execute(
             `
@@ -298,7 +307,7 @@ export const criarProjeto = async (request: CriarProjeto.Request): Promise<Criar
             [
                 projetoId,
                 request.nome.trim(),
-                request.descricao.trim() || null,
+                request.descricao?.trim() || null,
                 request.urlAplicacao?.trim() || null,
                 Enum.StatusProjeto.Desconhecido,
                 request.intervaloVerificacaoSegundos,
@@ -308,10 +317,15 @@ export const criarProjeto = async (request: CriarProjeto.Request): Promise<Criar
                 agora,
             ]
         )
+    } catch (erro) {
+        if (import.meta.env.DEV) {
+            console.error("[CriarProjeto]", erro)
+        }
+        throw erro
+    }
 
-        for (const repositorio of request.repositorios) {
-            const id = crypto.randomUUID()
-            repositoriosLocais.set(repositorio.externalId, id)
+    try {
+        for (const { id, repositorio } of repositorios) {
             await database.execute(
                 `
                     INSERT INTO projeto_repositorios (
@@ -324,18 +338,18 @@ export const criarProjeto = async (request: CriarProjeto.Request): Promise<Criar
                     projetoId,
                     Enum.Provider.GitHub,
                     repositorio.externalId,
-                    repositorio.connectionId,
+                    repositorio.connectionId || null,
                     repositorio.nome,
                     repositorio.fullName,
-                    repositorio.htmlUrl,
+                    repositorio.htmlUrl || null,
                     repositorio.tag,
-                    JSON.stringify(repositorio.snapshot),
+                    JSON.stringify(repositorio.snapshot) ?? null,
                     agora,
                 ]
             )
         }
 
-        for (const servico of request.servicos) {
+        for (const { id, servico } of servicos) {
             await database.execute(
                 `
                     INSERT INTO projeto_servicos (
@@ -345,34 +359,51 @@ export const criarProjeto = async (request: CriarProjeto.Request): Promise<Criar
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NULL, $14, $14)
                 `,
                 [
-                    crypto.randomUUID(),
+                    id,
                     projetoId,
                     servico.provider,
                     servico.externalProjectId,
-                    servico.externalEnvironmentId,
-                    servico.externalServiceId,
-                    servico.scopeId,
+                    servico.externalEnvironmentId || null,
+                    servico.externalServiceId || null,
+                    servico.scopeId || null,
                     servico.nome,
                     servico.tipo,
                     Number(servico.critico),
                     servico.repositorioExternalId
-                        ? (repositoriosLocais.get(servico.repositorioExternalId) ?? null)
+                        ? repositoriosLocais.get(servico.repositorioExternalId) || null
                         : null,
                     Enum.StatusProjeto.Desconhecido,
-                    JSON.stringify(servico.snapshot),
+                    JSON.stringify(servico.snapshot) ?? null,
                     agora,
                 ]
             )
         }
-        await database.execute("COMMIT")
     } catch (erro) {
-        await database.execute("ROLLBACK")
+        if (import.meta.env.DEV) {
+            console.error("[CriarProjeto]", erro)
+        }
+
+        try {
+            await database.execute("DELETE FROM projetos WHERE id = $1", [projetoId])
+        } catch (erroCompensacao) {
+            if (import.meta.env.DEV) {
+                console.error("[CriarProjeto:Compensacao]", erroCompensacao)
+            }
+        }
+
         throw erro
     }
 
-    const projeto = await obterProjetoPorId(projetoId)
-    if (!projeto) throw new Error("O projeto criado não pôde ser carregado.")
-    return projeto
+    try {
+        const projeto = await obterProjetoPorId(projetoId)
+        if (!projeto) throw new Error("O projeto criado não pôde ser carregado.")
+        return projeto
+    } catch (erro) {
+        if (import.meta.env.DEV) {
+            console.error("[CriarProjeto]", erro)
+        }
+        throw erro
+    }
 }
 
 export const atualizarProjeto = async (
@@ -489,63 +520,56 @@ export const salvarSnapshotServico = async (request: SalvarSnapshotServico.Reque
     const primeiraObservacao = !servico.verificadoEm
     const mudou = statusAnterior !== request.status
 
-    await database.execute("BEGIN IMMEDIATE")
-    try {
-        await database.execute(
-            `
-                UPDATE projeto_servicos
-                SET status = $1, snapshot_json = COALESCE($2, snapshot_json),
-                    verificado_em = $3, atualizado_em = $3
-                WHERE id = $4
-            `,
-            [
-                request.status,
-                request.snapshot === undefined ? null : JSON.stringify(request.snapshot),
-                agora,
-                request.servicoId,
-            ]
-        )
-        await salvarStatusRecurso(
-            servico.projetoId,
-            servico.id,
-            primeiraObservacao ? null : statusAnterior,
+    await database.execute(
+        `
+            UPDATE projeto_servicos
+            SET status = $1, snapshot_json = COALESCE($2, snapshot_json),
+                verificado_em = $3, atualizado_em = $3
+            WHERE id = $4
+        `,
+        [
             request.status,
-            request.responseTimeMs ?? null,
-            agora
-        )
-
-        if (!primeiraObservacao && mudou) {
-            const ficouIndisponivel =
-                statusAnterior === Enum.StatusProjeto.Saudavel &&
-                [Enum.StatusProjeto.Offline, Enum.StatusProjeto.Degradado].includes(request.status)
-            const recuperou =
-                [Enum.StatusProjeto.Offline, Enum.StatusProjeto.Degradado].includes(statusAnterior) &&
-                request.status === Enum.StatusProjeto.Saudavel
-            if (ficouIndisponivel) {
-                await abrirIncidente({
-                    projetoId: servico.projetoId,
-                    servicoId: servico.id,
-                    servicoNome: servico.nome,
-                    status: request.status,
-                })
-            }
-            if (recuperou) await resolverIncidente(servico.id)
-        }
-
-        const criticos = await database.select<Array<{ status: Enum.StatusProjeto }>>(
-            "SELECT status FROM projeto_servicos WHERE projeto_id = $1 AND critico = 1",
-            [servico.projetoId]
-        )
-        await database.execute("UPDATE projetos SET status = $1, atualizado_em = $2 WHERE id = $3", [
-            agregarStatus(criticos.map(({ status }) => status)),
+            request.snapshot === undefined ? null : (JSON.stringify(request.snapshot) ?? null),
             agora,
-            servico.projetoId,
-        ])
-        await database.execute("COMMIT")
-    } catch (erro) {
-        await database.execute("ROLLBACK")
-        throw erro
+            request.servicoId,
+        ]
+    )
+    await salvarStatusRecurso(
+        servico.projetoId,
+        servico.id,
+        primeiraObservacao ? null : statusAnterior,
+        request.status,
+        request.responseTimeMs ?? null,
+        agora
+    )
+
+    if (!primeiraObservacao && mudou) {
+        const ficouIndisponivel =
+            statusAnterior === Enum.StatusProjeto.Saudavel &&
+            [Enum.StatusProjeto.Offline, Enum.StatusProjeto.Degradado].includes(request.status)
+        const recuperou =
+            [Enum.StatusProjeto.Offline, Enum.StatusProjeto.Degradado].includes(statusAnterior) &&
+            request.status === Enum.StatusProjeto.Saudavel
+        if (ficouIndisponivel) {
+            await abrirIncidente({
+                projetoId: servico.projetoId,
+                servicoId: servico.id,
+                servicoNome: servico.nome,
+                status: request.status,
+            })
+        }
+        if (recuperou) await resolverIncidente(servico.id)
     }
+
+    const criticos = await database.select<Array<{ status: Enum.StatusProjeto }>>(
+        "SELECT status FROM projeto_servicos WHERE projeto_id = $1 AND critico = 1",
+        [servico.projetoId]
+    )
+    await database.execute("UPDATE projetos SET status = $1, atualizado_em = $2 WHERE id = $3", [
+        agregarStatus(criticos.map(({ status }) => status)),
+        agora,
+        servico.projetoId,
+    ])
 }
 
 const construirTendenciasDashboard = (

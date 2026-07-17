@@ -193,20 +193,14 @@ export const executarMigracoes = async (database: Database) => {
     for (const migracao of MIGRACOES) {
         if (versoesAplicadas.has(migracao.versao)) continue
 
-        await database.execute("BEGIN IMMEDIATE")
-        try {
-            for (const comando of migracao.comandos) {
-                await database.execute(comando)
-            }
-
-            await database.execute(
-                "INSERT INTO migracoes (versao, nome, aplicada_em) VALUES ($1, $2, $3)",
-                [migracao.versao, migracao.nome, new Date().toISOString()]
-            )
-            await database.execute("COMMIT")
-        } catch (erro) {
-            await database.execute("ROLLBACK")
-            throw erro
+        for (const comando of migracao.comandos) {
+            await database.execute(comando)
         }
+
+        await database.execute("INSERT INTO migracoes (versao, nome, aplicada_em) VALUES ($1, $2, $3)", [
+            migracao.versao,
+            migracao.nome,
+            new Date().toISOString(),
+        ])
     }
 }

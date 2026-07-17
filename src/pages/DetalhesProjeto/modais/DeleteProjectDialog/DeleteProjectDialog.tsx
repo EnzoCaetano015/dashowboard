@@ -23,9 +23,8 @@ export const DeleteProjectDialog = ({
             />
             <Modal.Body>
                 <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
-                    Isso <strong>não</strong> exclui repositórios no GitHub, projetos na Vercel,
-                    serviços do Railway ou bases no Supabase. Somente o vínculo local no DashowBoard é
-                    removido.
+                    Isso <strong>não</strong> exclui repositórios no GitHub, projetos na Vercel, serviços
+                    do Railway ou bases no Supabase. Somente o vínculo local no DashowBoard é removido.
                 </div>
             </Modal.Body>
             <Modal.Actions>

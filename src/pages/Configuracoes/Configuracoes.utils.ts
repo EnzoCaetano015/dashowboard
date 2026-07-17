@@ -1,4 +1,5 @@
 import { Enum } from "@/backend/api/enums/enum"
+import { obterMensagemErro } from "@/lib/utils/error"
 import type { InformacoesConfiguracoes } from "@/pages/Configuracoes/Configuracoes.types"
 
 export const INFORMACOES_INICIAIS: InformacoesConfiguracoes = {
@@ -38,12 +39,5 @@ export const converterDensidade = (valor: string) => {
 }
 
 export const obterMensagemErroConfiguracoes = (erro: unknown) => {
-    if (erro instanceof Error) return erro.message
-
-    if (typeof erro === "object" && erro !== null) {
-        const mensagem = Reflect.get(erro, "message")
-        if (typeof mensagem === "string") return mensagem
-    }
-
-    return "Não foi possível concluir a operação."
+    return obterMensagemErro(erro, "Não foi possível concluir a operação.")
 }

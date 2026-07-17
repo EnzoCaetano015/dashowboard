@@ -8,6 +8,35 @@ const URL_BANCO_DADOS = `sqlite:${NOME_BANCO_DADOS}`
 
 let databasePromise: Promise<Database> | undefined
 
+const TABELAS_NECESSARIAS = [
+    "incidentes",
+    "migracoes",
+    "preferencias_aplicacao",
+    "projeto_repositorios",
+    "projeto_servicos",
+    "projetos",
+    "status_recursos",
+] as const
+
+const validarBancoDadosDesenvolvimento = async (database: Database) => {
+    if (!import.meta.env.DEV) return
+
+    const violacoes = await database.select<unknown[]>("PRAGMA foreign_key_check")
+    if (violacoes.length > 0) {
+        throw new Error(`O banco possui ${violacoes.length} violação(ões) de chave estrangeira.`)
+    }
+
+    const tabelas = await database.select<Array<{ name: string }>>(
+        "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name"
+    )
+    const nomesTabelas = new Set(tabelas.map(({ name }) => name))
+    const tabelasAusentes = TABELAS_NECESSARIAS.filter((nome) => !nomesTabelas.has(nome))
+
+    if (tabelasAusentes.length > 0) {
+        throw new Error(`Tabelas ausentes no banco: ${tabelasAusentes.join(", ")}.`)
+    }
+}
+
 const carregarBancoDados = async () => {
     exigirRuntimeTauri()
 
@@ -15,6 +44,7 @@ const carregarBancoDados = async () => {
     const database = await Database.load(URL_BANCO_DADOS)
     await database.execute("PRAGMA foreign_keys = ON")
     await executarMigracoes(database)
+    await validarBancoDadosDesenvolvimento(database)
     return database
 }
 

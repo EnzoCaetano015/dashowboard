@@ -1135,7 +1135,7 @@ Carregamento:
     Icon={Boxes}
     titulo="Carregando projetos"
     subtitulo="Consultando seus agrupamentos locais."
-    className="[&_[data-slot=skeleton]]:h-36"
+    className="**:data-[slot=skeleton]:h-36"
     skeleton={{
         quantidade: 6,
         orientacao: "horizontal",

@@ -22,6 +22,7 @@ import {
     criarFormularioNovoProjeto,
     identificarServico,
 } from "@/components/NovoProjeto/NovoProjeto.utils"
+import { obterMensagemErro } from "@/lib/utils/error"
 import { possuiRuntimeTauri } from "@/lib/utils/tauri"
 import { normalizarStatusProjetoVercel } from "@/lib/utils/vercel"
 
@@ -36,7 +37,7 @@ export const useNovoProjetoConteudo = (open: boolean, onClose: () => void) => {
     const { mutateAsync: criarProjeto, isPending: criarProjetoIsPending } = useCriarProjeto()
 
     const { data: conexoesGitHub = [], isLoading: conexoesGitHubIsLoading } = useObterConexoesGitHub()
-    
+
     const {
         data: repositoriosData,
         isLoading: repositoriosIsLoading,
@@ -271,8 +272,7 @@ export const useNovoProjetoConteudo = (open: boolean, onClose: () => void) => {
         toast.promise(criacao, {
             loading: "Criando projeto...",
             success: "Projeto criado com sucesso.",
-            error: (erro) =>
-                erro instanceof Error ? erro.message : "Não foi possível criar o projeto.",
+            error: (erro) => obterMensagemErro(erro, "Não foi possível criar o projeto."),
         })
         try {
             const projeto = await criacao
