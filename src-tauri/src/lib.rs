@@ -18,12 +18,24 @@ use supabase::commands::{
     obter_conexao_supabase, obter_projetos_supabase, remover_conexao_supabase,
     salvar_conexao_supabase, testar_conexao_supabase,
 };
-use tauri::Manager;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager, WindowEvent,
+};
 use vercel::client::VercelClient;
 use vercel::commands::{
     obter_conexao_vercel, obter_projetos_vercel, remover_conexao_vercel, salvar_conexao_vercel,
     testar_conexao_vercel,
 };
+
+fn mostrar_janela(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -38,7 +50,48 @@ pub fn run() {
         ))
         .setup(|app| {
             std::fs::create_dir_all(app.path().app_config_dir()?)?;
+
+            let abrir = MenuItem::with_id(app, "abrir", "Abrir DashwoBoard", true, None::<&str>)?;
+            let sair = MenuItem::with_id(app, "sair", "Sair", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&abrir, &sair])?;
+            let icon = app.default_window_icon().cloned().ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "Ícone padrão do DashwoBoard não encontrado.",
+                )
+            })?;
+
+            TrayIconBuilder::new()
+                .icon(icon)
+                .tooltip("DashwoBoard")
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "abrir" => mostrar_janela(app),
+                    "sair" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        mostrar_janela(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .manage(GitHubClient::new())
         .manage(RailwayClient::new())
