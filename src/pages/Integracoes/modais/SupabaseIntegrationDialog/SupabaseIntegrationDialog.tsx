@@ -71,7 +71,7 @@ export const SupabaseIntegrationDialog = ({ open, onClose }: SupabaseIntegration
                     ) : isLoading ? (
                         <TemplateEstado.Carregando
                             skeleton={{ quantidade: 1, orientacao: "vertical" }}
-                            className="[&_[data-slot=skeleton]]:h-48"
+                            className="**:data-[slot=skeleton]:h-48"
                         />
                     ) : (
                         <>

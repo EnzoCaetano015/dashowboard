@@ -7,6 +7,7 @@ import { useControlModal } from "@/lib/hooks/useControlModal"
 export const useDetalhesProjeto = () => {
     const { modal, setModal } = useControlModal(["excluirProjeto"] as const)
     const { id } = useParams<{ id: string }>()
+    
     const {
         data: projeto,
         isLoading: projetoIsLoading,

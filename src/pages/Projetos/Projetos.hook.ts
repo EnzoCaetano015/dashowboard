@@ -3,6 +3,7 @@ import { useControlModal } from "@/lib/hooks/useControlModal"
 
 export const useProjetos = () => {
     const { modal, setModal } = useControlModal(["novoProjeto"] as const)
+    
     const {
         data: projetos = [],
         isLoading: projetosIsLoading,
