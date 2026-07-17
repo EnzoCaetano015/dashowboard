@@ -1,13 +1,22 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 
 import {
+    type ExportarBackupBancoDados,
+    type ObterInformacoesDesktop,
     PreferenciasQueryKeys,
-    type PreferenciasAplicacao,
+    type RevelarBancoDados,
     type SalvarPreferencias,
 } from "@/backend/api/models/preferencias.types"
-import { obterPreferencias, salvarPreferencias } from "@/backend/sql/preferencias.repository"
-import { notificacoesDoSistemaPermitidas, obterInicializacaoComSistema } from "@/lib/config/desktop"
-import { PREFERENCIAS_PADRAO } from "@/lib/config/preferencias"
+import {
+    exportarBackupBancoDados,
+    revelarBancoDados,
+} from "@/backend/sql/database"
+import { obterPreferencias, salvarPreferencias } from "@/backend/sql/repositories/preferencias"
+import {
+    notificacoesDoSistemaPermitidas,
+    obterInformacoesDesktop,
+    obterInicializacaoComSistema,
+} from "@/lib/config/desktop"
 import { queryClient } from "@/lib/config/query-client"
 import { possuiRuntimeTauri } from "@/lib/utils/tauri"
 
@@ -42,7 +51,6 @@ export const useObterPreferencias = () => {
         queryKey: CHAVE_PREFERENCIAS,
         queryFn: obterPreferenciasSincronizadas,
         enabled: runtimeDisponivel,
-        placeholderData: PREFERENCIAS_PADRAO,
         staleTime: Number.POSITIVE_INFINITY,
         retry: false,
     })
@@ -54,20 +62,29 @@ export const useSalvarPreferencias = () => {
             if (!possuiRuntimeTauri()) return Promise.resolve(request)
             return salvarPreferencias(request)
         },
-        onMutate: async (request) => {
-            await queryClient.cancelQueries({ queryKey: CHAVE_PREFERENCIAS })
-            const anteriores = queryClient.getQueryData<PreferenciasAplicacao>(CHAVE_PREFERENCIAS)
-            queryClient.setQueryData(CHAVE_PREFERENCIAS, request)
-            return { anteriores }
+        onSuccess: (preferencias) => {
+            queryClient.setQueryData(CHAVE_PREFERENCIAS, preferencias)
         },
-        onError: (_erro, request, contexto) => {
-            const atuais = queryClient.getQueryData<PreferenciasAplicacao>(CHAVE_PREFERENCIAS)
-            if (contexto?.anteriores && atuais === request) {
-                queryClient.setQueryData(CHAVE_PREFERENCIAS, contexto.anteriores)
-            }
-        },
-        scope: {
-            id: "salvar-preferencias-aplicacao",
-        },
+    })
+}
+
+export const useObterInformacoesDesktop = () => {
+    return useQuery<ObterInformacoesDesktop.Response>({
+        queryKey: [PreferenciasQueryKeys.ObterInformacoesDesktop],
+        queryFn: obterInformacoesDesktop,
+        staleTime: Number.POSITIVE_INFINITY,
+        retry: false,
+    })
+}
+
+export const useRevelarBancoDados = () => {
+    return useMutation<RevelarBancoDados.Response>({
+        mutationFn: revelarBancoDados,
+    })
+}
+
+export const useExportarBackupBancoDados = () => {
+    return useMutation<ExportarBackupBancoDados.Response>({
+        mutationFn: exportarBackupBancoDados,
     })
 }

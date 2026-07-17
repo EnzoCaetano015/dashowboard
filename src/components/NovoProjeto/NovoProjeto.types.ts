@@ -35,11 +35,8 @@ export type VercelProjectsSectionProps = {
     configurada: boolean
     isLoading: boolean
     isFetching: boolean
-    isError: boolean
-    erro?: string
     falhas: ObterProjetosVercel.Falha[]
     alternar: (projeto: ProjetoVercel) => void
-    tentarNovamente: () => void
     atualizar: () => void
 }
 
@@ -50,11 +47,8 @@ export type SupabaseProjectsSectionProps = {
     configurada: boolean
     isLoading: boolean
     isFetching: boolean
-    isError: boolean
-    erro?: string
     falhas: ObterProjetosSupabase.Falha[]
     alternar: (projeto: ProjetoSupabase) => void
-    tentarNovamente: () => void
     atualizar: () => void
 }
 
@@ -71,11 +65,8 @@ export type RepositoriosStepProps = {
     quantidadeConexoes: number
     isLoading: boolean
     isFetching: boolean
-    isError: boolean
-    erro?: string
     falhas: ObterRepositoriosGitHub.Falha[]
     alternar: (repositorio: RepositorioGitHub) => void
     alterarTag: (repositoryId: number, tag: Enum.TagRepositorio) => void
-    tentarNovamente: () => void
     atualizar: () => void
 }

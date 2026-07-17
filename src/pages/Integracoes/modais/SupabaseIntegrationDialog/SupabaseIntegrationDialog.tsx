@@ -18,7 +18,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { formatarDataHora } from "@/lib/utils/date"
-import { normalizarErroSupabase } from "@/lib/utils/supabase"
 import { abrirUrlExterna } from "@/lib/utils/tauri"
 import { ConfirmarRemocao } from "@/pages/Integracoes/modais/ConfirmarRemocao/ConfirmarRemocao"
 import { useSupabaseIntegrationDialog } from "@/pages/Integracoes/modais/SupabaseIntegrationDialog/SupabaseIntegrationDialog.hook"
@@ -31,12 +30,9 @@ export const SupabaseIntegrationDialog = ({ open, onClose }: SupabaseIntegration
         runtimeDisponivel,
         connection,
         isLoading,
-        isError,
-        error,
         isPending,
         removeIsPending,
         token,
-        formVisible,
         showForm,
         setToken,
         startUpdate,
@@ -46,7 +42,6 @@ export const SupabaseIntegrationDialog = ({ open, onClose }: SupabaseIntegration
         startRemove,
         cancelRemove,
         remove,
-        retry,
     } = useSupabaseIntegrationDialog()
 
     return (
@@ -77,23 +72,6 @@ export const SupabaseIntegrationDialog = ({ open, onClose }: SupabaseIntegration
                         <TemplateEstado.Carregando
                             skeleton={{ quantidade: 1, orientacao: "vertical" }}
                             className="[&_[data-slot=skeleton]]:h-48"
-                        />
-                    ) : isError && !formVisible ? (
-                        <TemplateEstado.Erro
-                            titulo="Falha ao carregar a integração Supabase"
-                            subtitulo={normalizarErroSupabase(error).message}
-                            Icon={AlertCircle}
-                            acao={
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => void retry()}
-                                    >
-                                        Tentar novamente
-                                    </Button>
-                                    <Button onClick={startUpdate}>Substituir token</Button>
-                                </>
-                            }
                         />
                     ) : (
                         <>

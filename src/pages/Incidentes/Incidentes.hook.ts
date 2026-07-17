@@ -11,8 +11,6 @@ export const useIncidentes = () => {
     const {
         data: incidentes = [],
         isLoading: incidentesIsLoading,
-        isError: incidentesIsError,
-        refetch: tentarNovamente,
     } = useObterIncidentes()
 
     const filtrados = useMemo(() => {
@@ -36,9 +34,7 @@ export const useIncidentes = () => {
             .length,
         projetosMonitorados: new Set(incidentes.map((incidente) => incidente.projetoId)).size,
         isLoading: incidentesIsLoading,
-        isError: incidentesIsError,
         setPeriodo,
         setBusca,
-        tentarNovamente,
     }
 }

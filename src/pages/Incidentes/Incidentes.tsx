@@ -23,10 +23,8 @@ export const IncidentesPage = () => {
         resolvidos,
         projetosMonitorados,
         isLoading,
-        isError,
         setPeriodo,
         setBusca,
-        tentarNovamente,
     } = useIncidentes()
 
     return (
@@ -70,13 +68,6 @@ export const IncidentesPage = () => {
                     skeleton={{ quantidade: 1, orientacao: "vertical" }}
                     className="**:data-[slot=skeleton]:h-96"
                 />
-            ) : isError ? (
-                <TemplateEstado.Erro
-                    titulo="Falha ao carregar incidentes"
-                    subtitulo="Não foi possível consultar os incidentes registrados."
-                    Icon={AlertCircle}
-                    acao={<Button onClick={() => void tentarNovamente()}>Tentar novamente</Button>}
-                />
             ) : (
                 <>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -96,73 +87,77 @@ export const IncidentesPage = () => {
                             classe="text-success"
                         />
                     </div>
-                    <Card className="mt-6 overflow-hidden border-border py-0 shadow-none">
-                        <div className="overflow-x-auto">
-                            <Table className="min-w-5xl">
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Incidente</TableHead>
-                                        <TableHead>Projeto</TableHead>
-                                        <TableHead>Serviço</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Início</TableHead>
-                                        <TableHead className="text-right">Duração</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {incidentes.map((incidente) => (
-                                        <TableRow key={incidente.id}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    {incidente.status ===
-                                                    Enum.StatusIncidente.Resolvido ? (
-                                                        <CheckCircle2 className="size-4 text-success" />
-                                                    ) : (
-                                                        <AlertCircle className="size-4 text-destructive" />
-                                                    )}
-                                                    <span className="font-medium">
-                                                        {incidente.titulo}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Link
-                                                    to={`/projetos/${incidente.projetoId}`}
-                                                    className="inline-flex items-center gap-1 text-primary hover:underline"
-                                                >
-                                                    {incidente.projetoNome}
-                                                    <ExternalLink className="size-3" />
-                                                </Link>
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                                {incidente.servico}
-                                            </TableCell>
-                                            <TableCell>
-                                                <IncidentStatus
-                                                    status={incidente.status}
-                                                    severidade={incidente.severidade}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                    <Clock className="size-3" />
-                                                    {incidente.iniciadoEm}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono text-xs tabular-nums">
-                                                {formatarDuracao(incidente.duracaoMinutos)}
-                                            </TableCell>
+                    {incidentes.length === 0 ? (
+                        <TemplateEstado.Vazio
+                            titulo="Nenhum incidente encontrado"
+                            subtitulo="Ajuste a busca ou aguarde novos eventos dos projetos monitorados."
+                            Icon={AlertCircle}
+                            className="mt-6"
+                        />
+                    ) : (
+                        <Card className="mt-6 overflow-hidden border-border py-0 shadow-none">
+                            <div className="overflow-x-auto">
+                                <Table className="min-w-5xl">
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Incidente</TableHead>
+                                            <TableHead>Projeto</TableHead>
+                                            <TableHead>Serviço</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Início</TableHead>
+                                            <TableHead className="text-right">Duração</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        {incidentes.length === 0 && (
-                            <div className="p-10 text-center text-sm text-muted-foreground">
-                                Nenhum incidente encontrado para esta busca.
+                                    </TableHeader>
+                                    <TableBody>
+                                        {incidentes.map((incidente) => (
+                                            <TableRow key={incidente.id}>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        {incidente.status ===
+                                                        Enum.StatusIncidente.Resolvido ? (
+                                                            <CheckCircle2 className="size-4 text-success" />
+                                                        ) : (
+                                                            <AlertCircle className="size-4 text-destructive" />
+                                                        )}
+                                                        <span className="font-medium">
+                                                            {incidente.titulo}
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Link
+                                                        to={`/projetos/${incidente.projetoId}`}
+                                                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                                                    >
+                                                        {incidente.projetoNome}
+                                                        <ExternalLink className="size-3" />
+                                                    </Link>
+                                                </TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {incidente.servico}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <IncidentStatus
+                                                        status={incidente.status}
+                                                        severidade={incidente.severidade}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                        <Clock className="size-3" />
+                                                        {incidente.iniciadoEm}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-right font-mono text-xs tabular-nums">
+                                                    {formatarDuracao(incidente.duracaoMinutos)}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </div>
-                        )}
-                    </Card>
+                        </Card>
+                    )}
                     <p className="mt-4 text-xs text-muted-foreground">
                         {projetosMonitorados} projetos com incidentes registrados · janela de {periodo}{" "}
                         dias.

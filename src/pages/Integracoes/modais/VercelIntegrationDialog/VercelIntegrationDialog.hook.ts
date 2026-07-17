@@ -19,9 +19,6 @@ export const useVercelIntegrationDialog = () => {
     const {
         data: connection,
         isLoading: connectionIsLoading,
-        isError: connectionIsError,
-        error: connectionError,
-        refetch: retry,
     } = useObterConexaoVercel()
     const { mutateAsync: saveConnection, isPending: saveConnectionIsPending } = useSalvarConexaoVercel()
     const { mutateAsync: testConnection, isPending: testConnectionIsPending } = useTestarConexaoVercel()
@@ -33,42 +30,52 @@ export const useVercelIntegrationDialog = () => {
         setFormVisible(false)
     }
 
-    const save = async () => {
+    const save = () => {
         if (!token.trim()) {
             toast.error("Informe o token da Vercel.")
             return
         }
-        try {
-            await saveConnection({ token: token.trim() })
-            resetForm()
-            toast.success(connection ? "Token Vercel substituído." : "Vercel conectada.")
-        } catch (error) {
-            toast.error(normalizarErroVercel(error).message)
-        }
+
+        toast.promise(saveConnection({ token: token.trim() }), {
+            loading: connection ? "Substituindo token Vercel..." : "Conectando à Vercel...",
+            success: () => {
+                resetForm()
+                return connection ? "Token Vercel substituído." : "Vercel conectada."
+            },
+            error: (error) => normalizarErroVercel(error).message,
+        })
     }
 
-    const test = async () => {
-        try {
-            const testedConnection = await testConnection()
+    const test = () => {
+        const testPromise = testConnection().then((testedConnection) => {
             if (testedConnection.status === Enum.StatusIntegracao.Erro) {
-                toast.error(testedConnection.erro ?? "A conexão Vercel apresentou um erro.")
-                return
+                return Promise.reject({
+                    code: "VERCEL_CONEXAO_INVALIDA",
+                    message:
+                        testedConnection.erro ?? "A conexão Vercel apresentou um erro.",
+                })
             }
-            toast.success("Conexão Vercel validada.")
-        } catch (error) {
-            toast.error(normalizarErroVercel(error).message)
-        }
+
+            return testedConnection
+        })
+
+        toast.promise(testPromise, {
+            loading: "Testando conexão Vercel...",
+            success: "Conexão Vercel validada.",
+            error: (error) => normalizarErroVercel(error).message,
+        })
     }
 
-    const remove = async () => {
-        try {
-            await removeConnection()
-            resetForm()
-            setModal("removerConexao", { open: false })
-            toast.success("Conexão e token Vercel removidos.")
-        } catch (error) {
-            toast.error(normalizarErroVercel(error).message)
-        }
+    const remove = () => {
+        toast.promise(removeConnection(), {
+            loading: "Removendo conexão Vercel...",
+            success: () => {
+                resetForm()
+                setModal("removerConexao", { open: false })
+                return "Conexão e token Vercel removidos."
+            },
+            error: (error) => normalizarErroVercel(error).message,
+        })
     }
 
     return {
@@ -76,8 +83,6 @@ export const useVercelIntegrationDialog = () => {
         runtimeDisponivel: possuiRuntimeTauri(),
         connection: connection ?? null,
         isLoading: connectionIsLoading,
-        isError: connectionIsError,
-        error: connectionError,
         isPending: saveConnectionIsPending || testConnectionIsPending || removeConnectionIsPending,
         removeIsPending: removeConnectionIsPending,
         token,
@@ -93,6 +98,5 @@ export const useVercelIntegrationDialog = () => {
             if (!removeConnectionIsPending) setModal("removerConexao", { open: false })
         },
         remove,
-        retry,
     }
 }

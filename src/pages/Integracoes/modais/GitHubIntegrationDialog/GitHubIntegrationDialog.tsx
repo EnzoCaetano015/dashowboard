@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { formatarDataHora } from "@/lib/utils/date"
-import { normalizarErroGitHub } from "@/lib/utils/github"
 import { ConfirmarRemocao } from "@/pages/Integracoes/modais/ConfirmarRemocao/ConfirmarRemocao"
 import { useGitHubIntegrationDialog } from "@/pages/Integracoes/modais/GitHubIntegrationDialog/GitHubIntegrationDialog.hook"
 import type { GitHubIntegrationDialogProps } from "@/pages/Integracoes/modais/GitHubIntegrationDialog/GitHubIntegrationDialog.types"
@@ -21,8 +20,6 @@ export const GitHubIntegrationDialog = ({ open, onClose }: GitHubIntegrationDial
         runtimeDisponivel,
         connections,
         isLoading,
-        isError,
-        error,
         isPending,
         removeIsPending,
         connectionToRemove,
@@ -44,7 +41,6 @@ export const GitHubIntegrationDialog = ({ open, onClose }: GitHubIntegrationDial
         startRemove,
         cancelRemove,
         remove,
-        retry,
     } = useGitHubIntegrationDialog()
 
     return (
@@ -75,28 +71,19 @@ export const GitHubIntegrationDialog = ({ open, onClose }: GitHubIntegrationDial
                         <TemplateEstado.Carregando
                             skeleton={{ quantidade: 2, orientacao: "vertical" }}
                         />
-                    ) : isError ? (
-                        <TemplateEstado.Erro
-                            titulo="Falha ao carregar conexões GitHub"
-                            subtitulo={normalizarErroGitHub(error).message}
-                            Icon={AlertCircle}
-                            acao={
-                                <Button
-                                    variant="outline"
-                                    onClick={() => void retry()}
-                                >
-                                    Tentar novamente
-                                </Button>
-                            }
-                        />
                     ) : (
                         <div className="space-y-3">
                             {connections.length === 0 && !formVisible && (
-                                <Card className="border-dashed">
-                                    <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                                        Nenhuma conexão GitHub configurada.
-                                    </CardContent>
-                                </Card>
+                                <TemplateEstado.Vazio
+                                    Icon={KeyRound}
+                                    titulo="Nenhuma conexão GitHub"
+                                    subtitulo="Adicione uma conexão para consultar seus repositórios."
+                                    acao={
+                                        <Button onClick={startNew}>
+                                            <Plus /> Adicionar conexão
+                                        </Button>
+                                    }
+                                />
                             )}
                             {connections.map((connection) => (
                                 <Card
@@ -269,7 +256,7 @@ export const GitHubIntegrationDialog = ({ open, onClose }: GitHubIntegrationDial
                     )}
                 </Modal.Body>
                 <Modal.Actions>
-                    {runtimeDisponivel && !formVisible && (
+                    {runtimeDisponivel && !formVisible && connections.length > 0 && (
                         <Button onClick={startNew}>
                             <Plus /> Adicionar conexão
                         </Button>

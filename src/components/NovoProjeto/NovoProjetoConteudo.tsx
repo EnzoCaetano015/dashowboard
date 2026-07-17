@@ -20,8 +20,6 @@ export const NovoProjetoConteudo = ({ open, onClose }: NovoProjetoConteudoProps)
         repositoriosRelacionamento,
         repositoriosIsLoading,
         repositoriosIsFetching,
-        repositoriosIsError,
-        repositoriosErro,
         repositoriosFalhas,
         quantidadeConexoes,
         runtimeDisponivel,
@@ -33,7 +31,6 @@ export const NovoProjetoConteudo = ({ open, onClose }: NovoProjetoConteudoProps)
         concluir,
         alternarRepositorio,
         alterarTagRepositorio,
-        tentarNovamenteRepositorios,
         atualizarRepositorios,
     } = useNovoProjetoConteudo(open, onClose)
 
@@ -91,12 +88,9 @@ export const NovoProjetoConteudo = ({ open, onClose }: NovoProjetoConteudoProps)
                         quantidadeConexoes={quantidadeConexoes}
                         isLoading={repositoriosIsLoading}
                         isFetching={repositoriosIsFetching}
-                        isError={repositoriosIsError}
-                        erro={repositoriosErro}
                         falhas={repositoriosFalhas}
                         alternar={alternarRepositorio}
                         alterarTag={alterarTagRepositorio}
-                        tentarNovamente={() => void tentarNovamenteRepositorios()}
                         atualizar={() => void atualizarRepositorios()}
                     />
                 )}

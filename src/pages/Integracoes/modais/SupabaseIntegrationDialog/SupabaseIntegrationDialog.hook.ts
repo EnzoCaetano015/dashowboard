@@ -19,9 +19,6 @@ export const useSupabaseIntegrationDialog = () => {
     const {
         data: connection,
         isLoading: connectionIsLoading,
-        isError: connectionIsError,
-        error: connectionError,
-        refetch: retry,
     } = useObterConexaoSupabase()
     const { mutateAsync: saveConnection, isPending: saveConnectionIsPending } =
         useSalvarConexaoSupabase()
@@ -35,43 +32,53 @@ export const useSupabaseIntegrationDialog = () => {
         setFormVisible(false)
     }
 
-    const save = async () => {
+    const save = () => {
         const tokenNormalizado = token.trim()
         if (!tokenNormalizado) {
             toast.error("Informe o Personal Access Token do Supabase.")
             return
         }
-        try {
-            await saveConnection({ token: tokenNormalizado })
-            resetForm()
-            toast.success(connection ? "Token Supabase substituído." : "Supabase conectado.")
-        } catch (error) {
-            toast.error(normalizarErroSupabase(error).message)
-        }
+
+        toast.promise(saveConnection({ token: tokenNormalizado }), {
+            loading: connection ? "Substituindo token Supabase..." : "Conectando ao Supabase...",
+            success: () => {
+                resetForm()
+                return connection ? "Token Supabase substituído." : "Supabase conectado."
+            },
+            error: (error) => normalizarErroSupabase(error).message,
+        })
     }
 
-    const test = async () => {
-        try {
-            const testedConnection = await testConnection()
+    const test = () => {
+        const testPromise = testConnection().then((testedConnection) => {
             if (testedConnection.status === Enum.StatusIntegracao.Erro) {
-                toast.error(testedConnection.erro ?? "A conexão Supabase apresentou um erro.")
-                return
+                return Promise.reject({
+                    code: "SUPABASE_CONEXAO_INVALIDA",
+                    message:
+                        testedConnection.erro ?? "A conexão Supabase apresentou um erro.",
+                })
             }
-            toast.success("Conexão Supabase validada.")
-        } catch (error) {
-            toast.error(normalizarErroSupabase(error).message)
-        }
+
+            return testedConnection
+        })
+
+        toast.promise(testPromise, {
+            loading: "Testando conexão Supabase...",
+            success: "Conexão Supabase validada.",
+            error: (error) => normalizarErroSupabase(error).message,
+        })
     }
 
-    const remove = async () => {
-        try {
-            await removeConnection()
-            resetForm()
-            setModal("removerConexao", { open: false })
-            toast.success("Conexão e token Supabase removidos.")
-        } catch (error) {
-            toast.error(normalizarErroSupabase(error).message)
-        }
+    const remove = () => {
+        toast.promise(removeConnection(), {
+            loading: "Removendo conexão Supabase...",
+            success: () => {
+                resetForm()
+                setModal("removerConexao", { open: false })
+                return "Conexão e token Supabase removidos."
+            },
+            error: (error) => normalizarErroSupabase(error).message,
+        })
     }
 
     return {
@@ -79,12 +86,9 @@ export const useSupabaseIntegrationDialog = () => {
         runtimeDisponivel: possuiRuntimeTauri(),
         connection: connection ?? null,
         isLoading: connectionIsLoading,
-        isError: connectionIsError,
-        error: connectionError,
         isPending: saveConnectionIsPending || testConnectionIsPending || removeConnectionIsPending,
         removeIsPending: removeConnectionIsPending,
         token,
-        formVisible,
         setToken,
         showForm: !connection || formVisible,
         startUpdate: () => setFormVisible(true),
@@ -96,6 +100,5 @@ export const useSupabaseIntegrationDialog = () => {
             if (!removeConnectionIsPending) setModal("removerConexao", { open: false })
         },
         remove,
-        retry,
     }
 }

@@ -1,4 +1,4 @@
-import { AlertCircle, RefreshCw } from "lucide-react"
+import { Boxes, RefreshCw } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { Enum } from "@/backend/api/enums/enum"
@@ -16,11 +16,8 @@ export const VercelProjectsSection = ({
     configurada,
     isLoading,
     isFetching,
-    isError,
-    erro,
     falhas,
     alternar,
-    tentarNovamente,
     atualizar,
 }: VercelProjectsSectionProps) => (
     <section className="space-y-3">
@@ -31,7 +28,7 @@ export const VercelProjectsSection = ({
                     Selecione projetos pessoais ou dos times acessíveis ao token.
                 </p>
             </div>
-            {runtimeDisponivel && configurada && !isLoading && !isError && (
+            {runtimeDisponivel && configurada && !isLoading && (
                 <Button
                     size="sm"
                     variant="outline"
@@ -52,36 +49,22 @@ export const VercelProjectsSection = ({
                 skeleton={{ quantidade: 3, orientacao: "vertical" }}
                 className="[&_[data-slot=skeleton]]:h-24"
             />
-        ) : isError ? (
-            <TemplateEstado.Erro
-                titulo="Falha ao consultar a Vercel"
-                subtitulo={erro ?? "Não foi possível listar os projetos disponíveis."}
-                Icon={AlertCircle}
-                acao={
-                    <Button
-                        variant="outline"
-                        onClick={tentarNovamente}
-                    >
-                        Tentar novamente
-                    </Button>
-                }
-            />
-        ) : projetos.length === 0 && falhas.length > 0 ? (
-            <div className="rounded-lg border border-destructive/40 p-6 text-center">
-                <AlertCircle className="mx-auto size-7 text-destructive" />
-                <h3 className="mt-3 font-medium">Nenhum escopo pôde listar projetos</h3>
-                {falhas.map((falha) => (
-                    <p
-                        key={`${falha.scopeId}-${falha.code}`}
-                        className="mt-1 text-xs text-muted-foreground"
-                    >
-                        <b>{falha.scopeName}:</b> {falha.message}
-                    </p>
-                ))}
-            </div>
         ) : projetos.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                Nenhum projeto Vercel acessível foi encontrado.
+            <div className="space-y-3">
+                <TemplateEstado.Vazio
+                    titulo="Nenhum projeto Vercel encontrado"
+                    subtitulo="Nenhum projeto acessível foi encontrado nos escopos configurados."
+                    Icon={Boxes}
+                />
+                {falhas.length > 0 && (
+                    <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning">
+                        {falhas.map((falha) => (
+                            <p key={`${falha.scopeId}-${falha.code}`}>
+                                <b>{falha.scopeName}:</b> {falha.message}
+                            </p>
+                        ))}
+                    </div>
+                )}
             </div>
         ) : (
             <>

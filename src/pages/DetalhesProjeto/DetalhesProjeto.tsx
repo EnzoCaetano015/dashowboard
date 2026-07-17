@@ -1,5 +1,3 @@
-import { AlertTriangle } from "lucide-react"
-
 import { ProjectHeader } from "@/components/ProjectHeader/ProjectHeader"
 import { ProjectHistory } from "@/components/ProjectHistory/ProjectHistory"
 import { ProjectOverview } from "@/components/ProjectOverview/ProjectOverview"
@@ -7,30 +5,19 @@ import { ProjectRepositories } from "@/components/ProjectRepositories/ProjectRep
 import { ProjectServices } from "@/components/ProjectServices/ProjectServices"
 import { ProjectSettings } from "@/components/ProjectSettings/ProjectSettings"
 import { TemplateEstado } from "@/components/TemplateEstado"
-import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProjetoNaoEncontrado } from "@/pages/DetalhesProjeto/components/ProjetoNaoEncontrado/ProjetoNaoEncontrado"
 import { useDetalhesProjeto } from "@/pages/DetalhesProjeto/DetalhesProjeto.hook"
 import { DeleteProjectDialog } from "@/pages/DetalhesProjeto/modais/DeleteProjectDialog/DeleteProjectDialog"
 
 export const DetalhesProjetoPage = () => {
-    const { modal, setModal, projeto, isLoading, isError, isFetching, atualizar, tentarNovamente } =
-        useDetalhesProjeto()
+    const { modal, setModal, projeto, isLoading, isFetching, atualizar } = useDetalhesProjeto()
 
     if (isLoading)
         return (
             <TemplateEstado.Carregando
                 skeleton={{ quantidade: 4, orientacao: "vertical" }}
                 className="**:data-[slot=skeleton]:h-32"
-            />
-        )
-    if (isError)
-        return (
-            <TemplateEstado.Erro
-                titulo="Falha ao carregar o projeto"
-                subtitulo="Não foi possível consultar os dados deste projeto."
-                Icon={AlertTriangle}
-                acao={<Button onClick={() => void tentarNovamente()}>Tentar novamente</Button>}
             />
         )
     if (!projeto) return <ProjetoNaoEncontrado />

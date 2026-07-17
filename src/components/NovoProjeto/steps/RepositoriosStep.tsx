@@ -1,4 +1,4 @@
-import { AlertCircle, LockKeyhole, RefreshCw } from "lucide-react"
+import { FolderGit2, LockKeyhole, RefreshCw } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { Enum } from "@/backend/api/enums/enum"
@@ -18,12 +18,9 @@ export const RepositoriosStep = ({
     quantidadeConexoes,
     isLoading,
     isFetching,
-    isError,
-    erro,
     falhas,
     alternar,
     alterarTag,
-    tentarNovamente,
     atualizar,
 }: RepositoriosStepProps) => {
     if (!runtimeDisponivel) {
@@ -35,50 +32,31 @@ export const RepositoriosStep = ({
     if (isLoading) {
         return <TemplateEstado.Carregando skeleton={{ quantidade: 4, orientacao: "vertical" }} />
     }
-    if (isError) {
-        return (
-            <TemplateEstado.Erro
-                titulo="Falha ao consultar o GitHub"
-                subtitulo={erro ?? "Não foi possível listar os repositórios disponíveis."}
-                Icon={AlertCircle}
-                acao={
-                    <Button
-                        variant="outline"
-                        onClick={tentarNovamente}
-                    >
-                        Tentar novamente
-                    </Button>
-                }
-            />
-        )
-    }
-    if (repositorios.length === 0 && falhas.length > 0) {
-        return (
-            <div className="rounded-lg border border-destructive/40 p-8 text-center">
-                <AlertCircle className="mx-auto size-8 text-destructive" />
-                <h3 className="mt-3 font-medium">Nenhuma conexão pôde listar repositórios</h3>
-                {falhas.map((falha) => (
-                    <p
-                        key={falha.connectionId}
-                        className="mt-1 text-sm text-muted-foreground"
-                    >
-                        <b>{falha.connectionName}:</b> {falha.message}
-                    </p>
-                ))}
-                <Button
-                    className="mt-4"
-                    variant="outline"
-                    onClick={tentarNovamente}
-                >
-                    Tentar novamente
-                </Button>
-            </div>
-        )
-    }
     if (repositorios.length === 0) {
         return (
-            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                Nenhum repositório acessível foi encontrado.
+            <div className="space-y-3">
+                <TemplateEstado.Vazio
+                    titulo="Nenhum repositório encontrado"
+                    subtitulo="Nenhum repositório acessível foi encontrado nas conexões configuradas."
+                    Icon={FolderGit2}
+                    acao={
+                        <Button
+                            variant="outline"
+                            onClick={atualizar}
+                        >
+                            Atualizar
+                        </Button>
+                    }
+                />
+                {falhas.length > 0 && (
+                    <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning">
+                        {falhas.map((falha) => (
+                            <p key={falha.connectionId}>
+                                <b>{falha.connectionName}:</b> {falha.message}
+                            </p>
+                        ))}
+                    </div>
+                )}
             </div>
         )
     }

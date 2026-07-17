@@ -1,70 +1,47 @@
-import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
-import { useObterPreferencias, useSalvarPreferencias } from "@/backend/api/controllers/preferencias"
+import {
+    useExportarBackupBancoDados,
+    useObterInformacoesDesktop,
+    useObterPreferencias,
+    useRevelarBancoDados,
+    useSalvarPreferencias,
+} from "@/backend/api/controllers/preferencias"
 import type { PreferenciasAplicacao } from "@/backend/api/models/preferencias.types"
-import { exportarBackupBancoDados, revelarBancoDados } from "@/backend/sql/database"
 import {
     configurarInicializacaoComSistema,
     enviarNotificacaoSistema,
     garantirPermissaoNotificacoes,
-    obterInformacoesDesktop,
 } from "@/lib/config/desktop"
 import { PREFERENCIAS_PADRAO } from "@/lib/config/preferencias"
-import { possuiRuntimeTauri } from "@/lib/utils/tauri"
-import type { InformacoesConfiguracoes } from "@/pages/Configuracoes/Configuracoes.types"
 import {
     INFORMACOES_INICIAIS,
     obterMensagemErroConfiguracoes,
 } from "@/pages/Configuracoes/Configuracoes.utils"
 
 export const useConfiguracoes = () => {
-    const runtimeDisponivel = possuiRuntimeTauri()
     const {
         data: preferencias = PREFERENCIAS_PADRAO,
-        error: preferenciasErro,
-        isError: preferenciasIsError,
         isLoading: preferenciasIsLoading,
-        isPlaceholderData: preferenciasIsPlaceholderData,
-        refetch: tentarObterPreferenciasNovamente,
     } = useObterPreferencias()
+    const { data: informacoes = INFORMACOES_INICIAIS, isLoading: informacoesIsLoading } =
+        useObterInformacoesDesktop()
     const { mutateAsync: salvarPreferencias, isPending: preferenciasIsPending } = useSalvarPreferencias()
-    const [informacoes, setInformacoes] = useState<InformacoesConfiguracoes>(INFORMACOES_INICIAIS)
-    const [armazenamentoIsPending, setArmazenamentoIsPending] = useState(false)
+    const { mutateAsync: revelarBancoDados, isPending: revelarBancoDadosIsPending } =
+        useRevelarBancoDados()
+    const { mutateAsync: exportarBackupBancoDados, isPending: exportarBackupIsPending } =
+        useExportarBackupBancoDados()
 
-    useEffect(() => {
-        let ativo = true
-
-        void obterInformacoesDesktop()
-            .then((resultado) => {
-                if (ativo) setInformacoes(resultado)
-            })
-            .catch((erro: unknown) => {
-                if (!ativo) return
-                setInformacoes((atuais) => ({
-                    ...atuais,
-                    caminhoBanco: obterMensagemErroConfiguracoes(erro),
-                }))
-            })
-
-        return () => {
-            ativo = false
-        }
-    }, [])
-
-    const alterar = async <Campo extends keyof PreferenciasAplicacao>(
+    const alterar = <Campo extends keyof PreferenciasAplicacao>(
         campo: Campo,
         valor: PreferenciasAplicacao[Campo]
     ) => {
         if (preferencias[campo] === valor) return
 
         const atualizadas = { ...preferencias, [campo]: valor }
-        let inicializacaoAlterada = false
-
-        try {
+        const salvar = async () => {
             if (campo === "iniciarComSistema") {
                 await configurarInicializacaoComSistema(Boolean(valor))
-                inicializacaoAlterada = true
             }
 
             if (campo === "notificacoesSistema" && valor === true) {
@@ -72,47 +49,57 @@ export const useConfiguracoes = () => {
             }
 
             await salvarPreferencias(atualizadas)
+        }
 
-            if (campo === "notificacoesSistema" && valor === true) {
-                void enviarNotificacaoSistema(
-                    "DashwoBoard",
-                    "Notificações do sistema ativadas.",
-                    atualizadas.somIncidente
-                ).catch((erro: unknown) => {
-                    toast.warning(obterMensagemErroConfiguracoes(erro))
-                })
-            }
-        } catch (erro) {
-            if (inicializacaoAlterada) {
-                void configurarInicializacaoComSistema(preferencias.iniciarComSistema).catch(
-                    () => undefined
+        toast.promise(salvar(), {
+            id: "salvar-preferencias-aplicacao",
+            loading: "Salvando preferência...",
+            success: () => {
+                if (campo !== "notificacoesSistema" || valor !== true) {
+                    return "Preferência atualizada."
+                }
+
+                toast.promise(
+                    enviarNotificacaoSistema(
+                        "DashwoBoard",
+                        "Notificações do sistema ativadas.",
+                        atualizadas.somIncidente
+                    ),
+                    {
+                        loading: "Enviando notificação de teste...",
+                        success: "Notificações do sistema ativadas.",
+                        error: obterMensagemErroConfiguracoes,
+                    }
                 )
-            }
-            toast.error(obterMensagemErroConfiguracoes(erro))
-        }
+
+                return "Preferência atualizada."
+            },
+            error: (erro) => {
+                if (campo === "iniciarComSistema") {
+                    void configurarInicializacaoComSistema(preferencias.iniciarComSistema).catch(
+                        () => undefined
+                    )
+                }
+
+                return obterMensagemErroConfiguracoes(erro)
+            },
+        })
     }
 
-    const abrirPasta = async () => {
-        setArmazenamentoIsPending(true)
-        try {
-            await revelarBancoDados()
-        } catch (erro) {
-            toast.error(obterMensagemErroConfiguracoes(erro))
-        } finally {
-            setArmazenamentoIsPending(false)
-        }
+    const abrirPasta = () => {
+        toast.promise(revelarBancoDados(), {
+            loading: "Abrindo pasta do banco de dados...",
+            success: "Pasta do banco de dados aberta.",
+            error: obterMensagemErroConfiguracoes,
+        })
     }
 
-    const exportarBackup = async () => {
-        setArmazenamentoIsPending(true)
-        try {
-            await exportarBackupBancoDados()
-            toast.success("Backup exportado para a pasta de downloads.")
-        } catch (erro) {
-            toast.error(obterMensagemErroConfiguracoes(erro))
-        } finally {
-            setArmazenamentoIsPending(false)
-        }
+    const exportarBackup = () => {
+        toast.promise(exportarBackupBancoDados(), {
+            loading: "Exportando backup...",
+            success: "Backup exportado para a pasta de downloads.",
+            error: obterMensagemErroConfiguracoes,
+        })
     }
 
     return {
@@ -121,12 +108,8 @@ export const useConfiguracoes = () => {
         alterar,
         abrirPasta,
         exportarBackup,
-        armazenamentoIsPending,
+        armazenamentoIsPending: revelarBancoDadosIsPending || exportarBackupIsPending,
         preferenciasIsPending,
-        preferenciasIsLoading:
-            runtimeDisponivel && (preferenciasIsLoading || preferenciasIsPlaceholderData),
-        preferenciasIsError,
-        preferenciasErro: obterMensagemErroConfiguracoes(preferenciasErro),
-        tentarObterPreferenciasNovamente,
+        preferenciasIsLoading: preferenciasIsLoading || informacoesIsLoading,
     }
 }

@@ -10,14 +10,17 @@ export const useDetalhesProjeto = () => {
     const {
         data: projeto,
         isLoading: projetoIsLoading,
-        isError: projetoIsError,
         isFetching: projetoIsFetching,
         refetch: atualizarProjeto,
     } = useObterProjetoPorId({ id })
 
-    const atualizar = async () => {
-        await atualizarProjeto()
-        toast.success("Projeto atualizado com dados mockados.")
+    const atualizar = () => {
+        toast.promise(atualizarProjeto({ throwOnError: true }), {
+            id: `atualizar-projeto-${id}`,
+            loading: "Atualizando projeto...",
+            success: "Projeto atualizado com dados mockados.",
+            error: "Não foi possível atualizar o projeto.",
+        })
     }
 
     return {
@@ -25,9 +28,7 @@ export const useDetalhesProjeto = () => {
         setModal,
         projeto,
         isLoading: projetoIsLoading,
-        isError: projetoIsError,
         isFetching: projetoIsFetching,
         atualizar,
-        tentarNovamente: atualizarProjeto,
     }
 }

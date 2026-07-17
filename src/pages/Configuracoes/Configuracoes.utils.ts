@@ -2,7 +2,7 @@ import { Enum } from "@/backend/api/enums/enum"
 import type { InformacoesConfiguracoes } from "@/pages/Configuracoes/Configuracoes.types"
 
 export const INFORMACOES_INICIAIS: InformacoesConfiguracoes = {
-    caminhoBanco: "Carregando...",
+    caminhoBanco: "Informação indisponível",
     versao: "—",
     runtime: "—",
     build: "—",

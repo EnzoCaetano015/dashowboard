@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useSyncExternalStore } from "react"
 
 import { Enum } from "@/backend/api/enums/enum"
 import { useObterPreferencias } from "@/backend/api/controllers/preferencias"
@@ -17,19 +17,19 @@ import { queryClient } from "@/lib/config/query-client"
 
 const consultaTemaEscuroDoSistema = () => window.matchMedia("(prefers-color-scheme: dark)")
 
+const assinarTemaDoSistema = (notificarMudanca: () => void) => {
+    const consulta = consultaTemaEscuroDoSistema()
+    consulta.addEventListener("change", notificarMudanca)
+    return () => consulta.removeEventListener("change", notificarMudanca)
+}
+
+const obterTemaEscuroDoSistema = () => consultaTemaEscuroDoSistema().matches
+
 export const usePreferenciasGlobais = () => {
     const { data: preferencias = PREFERENCIAS_PADRAO } = useObterPreferencias()
-    const [sistemaEscuro, setSistemaEscuro] = useState(() => consultaTemaEscuroDoSistema().matches)
+    const sistemaEscuro = useSyncExternalStore(assinarTemaDoSistema, obterTemaEscuroDoSistema)
     const incidentesConhecidos = useRef<Set<string> | null>(null)
     const temaEfetivo = resolverTemaAplicacao(preferencias.tema, sistemaEscuro)
-
-    useEffect(() => {
-        const consulta = consultaTemaEscuroDoSistema()
-        const atualizarTema = (evento: MediaQueryListEvent) => setSistemaEscuro(evento.matches)
-
-        consulta.addEventListener("change", atualizarTema)
-        return () => consulta.removeEventListener("change", atualizarTema)
-    }, [])
 
     useEffect(() => {
         const elemento = document.documentElement
@@ -83,7 +83,6 @@ export const usePreferenciasGlobais = () => {
         preferencias.badgeIcone,
         preferencias.notificacoesSistema,
         preferencias.somIncidente,
-        preferencias.tema,
     ])
 
     return {

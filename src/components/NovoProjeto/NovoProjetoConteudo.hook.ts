@@ -13,10 +13,7 @@ import type {
     RepositorioSelecionado,
     ServicoSelecionado,
 } from "@/components/NovoProjeto/NovoProjeto.types"
-import { normalizarErroGitHub } from "@/lib/utils/github"
-import { normalizarErroSupabase } from "@/lib/utils/supabase"
 import { possuiRuntimeTauri } from "@/lib/utils/tauri"
-import { normalizarErroVercel } from "@/lib/utils/vercel"
 
 export const useNovoProjetoConteudo = (open: boolean, onClose: () => void) => {
     const [etapa, setEtapa] = useState<EtapaNovoProjeto>(1)
@@ -29,46 +26,31 @@ export const useNovoProjetoConteudo = (open: boolean, onClose: () => void) => {
     const {
         data: connections,
         isLoading: connectionsIsLoading,
-        isError: connectionsIsError,
-        error: connectionsError,
-        refetch: refetchConnections,
     } = useObterConexoesGitHub()
     const {
         data: repositoriesData,
         isLoading: repositoriesIsLoading,
         isFetching: repositoriesIsFetching,
-        isError: repositoriesIsError,
-        error: repositoriesError,
         refetch: refetchRepositories,
     } = useObterRepositoriosGitHub({}, open && (connections?.length ?? 0) > 0)
     const {
         data: vercelConnection,
         isLoading: vercelConnectionIsLoading,
-        isError: vercelConnectionIsError,
-        error: vercelConnectionError,
-        refetch: refetchVercelConnection,
     } = useObterConexaoVercel()
     const {
         data: vercelProjectsData,
         isLoading: vercelProjectsIsLoading,
         isFetching: vercelProjectsIsFetching,
-        isError: vercelProjectsIsError,
-        error: vercelProjectsError,
         refetch: refetchVercelProjects,
     } = useObterProjetosVercel(open && Boolean(vercelConnection))
     const {
         data: supabaseConnection,
         isLoading: supabaseConnectionIsLoading,
-        isError: supabaseConnectionIsError,
-        error: supabaseConnectionError,
-        refetch: refetchSupabaseConnection,
     } = useObterConexaoSupabase()
     const {
         data: supabaseProjectsData,
         isLoading: supabaseProjectsIsLoading,
         isFetching: supabaseProjectsIsFetching,
-        isError: supabaseProjectsIsError,
-        error: supabaseProjectsError,
         refetch: refetchSupabaseProjects,
     } = useObterProjetosSupabase(open && runtimeDisponivel && Boolean(supabaseConnection))
 
@@ -157,8 +139,6 @@ export const useNovoProjetoConteudo = (open: boolean, onClose: () => void) => {
         ),
         repositoriosIsLoading: connectionsIsLoading || repositoriesIsLoading,
         repositoriosIsFetching: repositoriesIsFetching,
-        repositoriosIsError: connectionsIsError || repositoriesIsError,
-        repositoriosErro: normalizarErroGitHub(connectionsError ?? repositoriesError).message,
         repositoriosFalhas: repositoriesData?.failures ?? [],
         quantidadeConexoes: connections?.length ?? 0,
         runtimeDisponivel,
@@ -170,14 +150,8 @@ export const useNovoProjetoConteudo = (open: boolean, onClose: () => void) => {
             isLoading:
                 vercelConnectionIsLoading || (Boolean(vercelConnection) && vercelProjectsIsLoading),
             isFetching: vercelProjectsIsFetching,
-            isError: vercelConnectionIsError || vercelProjectsIsError,
-            erro: normalizarErroVercel(vercelConnectionError ?? vercelProjectsError).message,
             falhas: vercelProjectsData?.failures ?? [],
             alternar: alternarServicoVercel,
-            tentarNovamente: async () => {
-                const connection = await refetchVercelConnection()
-                if (connection.data) await refetchVercelProjects()
-            },
             atualizar: refetchVercelProjects,
         },
         supabase: {
@@ -188,14 +162,8 @@ export const useNovoProjetoConteudo = (open: boolean, onClose: () => void) => {
                 supabaseConnectionIsLoading ||
                 (Boolean(supabaseConnection) && supabaseProjectsIsLoading),
             isFetching: supabaseProjectsIsFetching,
-            isError: supabaseConnectionIsError || supabaseProjectsIsError,
-            erro: normalizarErroSupabase(supabaseConnectionError ?? supabaseProjectsError).message,
             falhas: supabaseProjectsData?.failures ?? [],
             alternar: alternarServicoSupabase,
-            tentarNovamente: async () => {
-                const connection = await refetchSupabaseConnection()
-                if (connection.data) await refetchSupabaseProjects()
-            },
             atualizar: refetchSupabaseProjects,
         },
         voltar,
@@ -203,10 +171,6 @@ export const useNovoProjetoConteudo = (open: boolean, onClose: () => void) => {
         concluir,
         alternarRepositorio,
         alterarTagRepositorio,
-        tentarNovamenteRepositorios: async () => {
-            const connectionsResult = await refetchConnections()
-            if ((connectionsResult.data?.length ?? 0) > 0) await refetchRepositories()
-        },
         atualizarRepositorios: refetchRepositories,
     }
 }

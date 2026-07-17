@@ -4,15 +4,10 @@ import type { ObterIntegracoes } from "@/backend/api/models/integracao.types"
 import type { ConexaoSupabase, ObterProjetosSupabase } from "@/backend/api/models/supabase.types"
 import type { ConexaoVercel } from "@/backend/api/models/vercel.types"
 import { formatarDataHora } from "@/lib/utils/date"
-import { normalizarErroGitHub } from "@/lib/utils/github"
-import { normalizarErroSupabase } from "@/lib/utils/supabase"
-import { normalizarErroVercel } from "@/lib/utils/vercel"
 
 type EstadoConsulta = {
     runtimeDisponivel: boolean
     isLoading: boolean
-    isError: boolean
-    error: unknown
 }
 
 const integracaoDesktop = (provider: Enum.Provider): ObterIntegracoes.Integracao => ({
@@ -27,15 +22,6 @@ export const montarIntegracaoGitHub = (
     consulta: EstadoConsulta
 ): ObterIntegracoes.Integracao => {
     if (!consulta.runtimeDisponivel) return integracaoDesktop(Enum.Provider.GitHub)
-    if (consulta.isError) {
-        return {
-            provider: Enum.Provider.GitHub,
-            conta: "Não foi possível consultar as conexões",
-            status: Enum.StatusIntegracao.Erro,
-            erro: normalizarErroGitHub(consulta.error).message,
-            ultimaSincronizacao: "Não disponível",
-        }
-    }
     if (consulta.isLoading) {
         return {
             provider: Enum.Provider.GitHub,
@@ -80,15 +66,6 @@ export const montarIntegracaoVercel = (
     consulta: EstadoConsulta
 ): ObterIntegracoes.Integracao => {
     if (!consulta.runtimeDisponivel) return integracaoDesktop(Enum.Provider.Vercel)
-    if (consulta.isError) {
-        return {
-            provider: Enum.Provider.Vercel,
-            conta: "Não foi possível consultar a conexão",
-            status: Enum.StatusIntegracao.Erro,
-            erro: normalizarErroVercel(consulta.error).message,
-            ultimaSincronizacao: "Não disponível",
-        }
-    }
     if (!connection) {
         return {
             provider: Enum.Provider.Vercel,
@@ -109,26 +86,9 @@ export const montarIntegracaoVercel = (
 export const montarIntegracaoSupabase = (
     connection: ConexaoSupabase | null,
     projetos: ObterProjetosSupabase.Response | undefined,
-    consultaConexao: EstadoConsulta,
-    consultaProjetos: Pick<EstadoConsulta, "isError" | "error">
+    consultaConexao: EstadoConsulta
 ): ObterIntegracoes.Integracao => {
     if (!consultaConexao.runtimeDisponivel) return integracaoDesktop(Enum.Provider.Supabase)
-    const error = consultaConexao.isError
-        ? normalizarErroSupabase(consultaConexao.error)
-        : consultaProjetos.isError
-          ? normalizarErroSupabase(consultaProjetos.error)
-          : null
-    if (error) {
-        return {
-            provider: Enum.Provider.Supabase,
-            conta: connection ? `@${connection.username} · ${connection.email}` : "Falha na conexão",
-            status: Enum.StatusIntegracao.Erro,
-            erro: error.message,
-            ultimaSincronizacao: connection
-                ? formatarDataHora(connection.ultimaSincronizacao)
-                : "Não disponível",
-        }
-    }
     if (!connection) {
         return {
             provider: Enum.Provider.Supabase,

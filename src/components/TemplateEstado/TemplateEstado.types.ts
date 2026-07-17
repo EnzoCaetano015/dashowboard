@@ -14,9 +14,9 @@ export type CarregandoProps = {
     subtitulo?: string
 }
 
-export type ErroProps = {
-    titulo: string
-    subtitulo: string
+export type VazioProps = {
+    titulo?: string
+    subtitulo?: string
     Icon?: LucideIcon
     acao?: ReactNode
     className?: string

@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { formatarDataHora } from "@/lib/utils/date"
-import { normalizarErroVercel } from "@/lib/utils/vercel"
 import { ConfirmarRemocao } from "@/pages/Integracoes/modais/ConfirmarRemocao/ConfirmarRemocao"
 import { useVercelIntegrationDialog } from "@/pages/Integracoes/modais/VercelIntegrationDialog/VercelIntegrationDialog.hook"
 import type { VercelIntegrationDialogProps } from "@/pages/Integracoes/modais/VercelIntegrationDialog/VercelIntegrationDialog.types"
@@ -21,8 +20,6 @@ export const VercelIntegrationDialog = ({ open, onClose }: VercelIntegrationDial
         runtimeDisponivel,
         connection,
         isLoading,
-        isError,
-        error,
         isPending,
         removeIsPending,
         token,
@@ -35,7 +32,6 @@ export const VercelIntegrationDialog = ({ open, onClose }: VercelIntegrationDial
         startRemove,
         cancelRemove,
         remove,
-        retry,
     } = useVercelIntegrationDialog()
 
     return (
@@ -65,21 +61,7 @@ export const VercelIntegrationDialog = ({ open, onClose }: VercelIntegrationDial
                     ) : isLoading ? (
                         <TemplateEstado.Carregando
                             skeleton={{ quantidade: 1, orientacao: "vertical" }}
-                            className="[&_[data-slot=skeleton]]:h-48"
-                        />
-                    ) : isError ? (
-                        <TemplateEstado.Erro
-                            titulo="Falha ao carregar a integração Vercel"
-                            subtitulo={normalizarErroVercel(error).message}
-                            Icon={AlertCircle}
-                            acao={
-                                <Button
-                                    variant="outline"
-                                    onClick={() => void retry()}
-                                >
-                                    Tentar novamente
-                                </Button>
-                            }
+                            className="**:data-[slot=skeleton]:h-48"
                         />
                     ) : (
                         <>

@@ -1,4 +1,4 @@
-import { AlertCircle, ExternalLink, RefreshCw } from "lucide-react"
+import { Database, ExternalLink, RefreshCw } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { Enum } from "@/backend/api/enums/enum"
@@ -18,11 +18,8 @@ export const SupabaseProjectsSection = ({
     configurada,
     isLoading,
     isFetching,
-    isError,
-    erro,
     falhas,
     alternar,
-    tentarNovamente,
     atualizar,
 }: SupabaseProjectsSectionProps) => (
     <section className="space-y-3">
@@ -33,7 +30,7 @@ export const SupabaseProjectsSection = ({
                     Selecione bancos acessíveis ao Personal Access Token.
                 </p>
             </div>
-            {runtimeDisponivel && configurada && !isLoading && !isError && (
+            {runtimeDisponivel && configurada && !isLoading && (
                 <Button
                     size="sm"
                     variant="outline"
@@ -54,28 +51,14 @@ export const SupabaseProjectsSection = ({
                 skeleton={{ quantidade: 3, orientacao: "vertical" }}
                 className="[&_[data-slot=skeleton]]:h-32"
             />
-        ) : isError ? (
-            <TemplateEstado.Erro
-                titulo="Falha ao consultar o Supabase"
-                subtitulo={erro ?? "Não foi possível listar os projetos disponíveis."}
-                Icon={AlertCircle}
-                acao={
-                    <Button
-                        variant="outline"
-                        onClick={tentarNovamente}
-                    >
-                        Tentar novamente
-                    </Button>
-                }
-            />
-        ) : projetos.length === 0 && falhas.length > 0 ? (
-            <FalhasSupabase
-                falhas={falhas}
-                completa
-            />
         ) : projetos.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                Nenhum projeto Supabase acessível foi encontrado.
+            <div className="space-y-3">
+                <TemplateEstado.Vazio
+                    titulo="Nenhum projeto Supabase encontrado"
+                    subtitulo="Nenhum projeto acessível foi encontrado nas organizações configuradas."
+                    Icon={Database}
+                />
+                {falhas.length > 0 && <FalhasSupabase falhas={falhas} />}
             </div>
         ) : (
             <>
@@ -139,18 +122,8 @@ export const SupabaseProjectsSection = ({
     </section>
 )
 
-const FalhasSupabase = ({
-    falhas,
-    completa = false,
-}: Pick<SupabaseProjectsSectionProps, "falhas"> & { completa?: boolean }) => (
-    <div
-        className={
-            completa
-                ? "rounded-lg border border-destructive/40 p-6 text-center"
-                : "rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning"
-        }
-    >
-        {completa && <AlertCircle className="mx-auto mb-3 size-7 text-destructive" />}
+const FalhasSupabase = ({ falhas }: Pick<SupabaseProjectsSectionProps, "falhas">) => (
+    <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning">
         {falhas.map((falha) => (
             <p
                 key={`${falha.organizacaoId}-${falha.code}`}

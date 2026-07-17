@@ -1,16 +1,12 @@
-import { AlertCircle } from "lucide-react"
-
 import { IntegrationCard } from "@/components/IntegrationCard/IntegrationCard"
 import { TemplateEstado } from "@/components/TemplateEstado"
-import { Button } from "@/components/ui/button"
 import { useIntegracoes } from "@/pages/Integracoes/Integracoes.hook"
 import { GitHubIntegrationDialog } from "@/pages/Integracoes/modais/GitHubIntegrationDialog/GitHubIntegrationDialog"
 import { SupabaseIntegrationDialog } from "@/pages/Integracoes/modais/SupabaseIntegrationDialog/SupabaseIntegrationDialog"
 import { VercelIntegrationDialog } from "@/pages/Integracoes/modais/VercelIntegrationDialog/VercelIntegrationDialog"
 
 export const IntegracoesPage = () => {
-    const { modal, setModal, integracoes, isLoading, isError, abrirDialogo, tentarNovamente } =
-        useIntegracoes()
+    const { modal, setModal, integracoes, abrirDialogo } = useIntegracoes()
 
     return (
         <div>
@@ -20,19 +16,7 @@ export const IntegracoesPage = () => {
                     Conecte contas e tokens para o DashwoBoard ler o estado dos seus recursos.
                 </p>
             </div>
-            {isLoading ? (
-                <TemplateEstado.Carregando
-                    skeleton={{ quantidade: 4, orientacao: "horizontal" }}
-                    className="**:data-[slot=skeleton]:h-56 **:data-[slot=template-estado-skeletons]:md:grid-cols-2"
-                />
-            ) : isError ? (
-                <TemplateEstado.Erro
-                    titulo="Falha ao carregar integrações"
-                    subtitulo="Não foi possível consultar as integrações configuradas."
-                    Icon={AlertCircle}
-                    acao={<Button onClick={() => void tentarNovamente()}>Tentar novamente</Button>}
-                />
-            ) : (
+            {integracoes.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
                     {integracoes.map((integracao) => (
                         <IntegrationCard
@@ -43,6 +27,11 @@ export const IntegracoesPage = () => {
                         />
                     ))}
                 </div>
+            ) : (
+                <TemplateEstado.Vazio
+                    titulo="Nenhuma integração disponível"
+                    subtitulo="Configure uma integração para começar a consultar seus recursos."
+                />
             )}
             <GitHubIntegrationDialog
                 open={modal.integracaoGitHub}

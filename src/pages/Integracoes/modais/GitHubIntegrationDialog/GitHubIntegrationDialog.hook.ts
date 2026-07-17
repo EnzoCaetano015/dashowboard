@@ -25,9 +25,6 @@ export const useGitHubIntegrationDialog = () => {
     const {
         data: connections = [],
         isLoading: connectionsIsLoading,
-        isError: connectionsIsError,
-        error: connectionsError,
-        refetch: retry,
     } = useObterConexoesGitHub()
     const { mutateAsync: saveConnection, isPending: saveConnectionIsPending } = useSalvarConexaoGitHub()
     const { mutateAsync: testConnection, isPending: testConnectionIsPending } = useTestarConexaoGitHub()
@@ -57,37 +54,54 @@ export const useGitHubIntegrationDialog = () => {
         setFormVisible(true)
     }
 
-    const save = async () => {
+    const save = () => {
         if (!nome.trim() || !resourceOwner.trim() || !token.trim()) {
             toast.error("Preencha nome, resource owner e token.")
             return
         }
-        try {
-            await saveConnection({
+
+        const updatingConnection = Boolean(connectionId)
+
+        toast.promise(
+            saveConnection({
                 connectionId,
                 nome: nome.trim(),
                 tipo,
                 resourceOwner: resourceOwner.trim(),
                 token: token.trim(),
-            })
-            resetForm()
-            toast.success(connectionId ? "Conexão atualizada." : "Conexão GitHub adicionada.")
-        } catch (error) {
-            toast.error(normalizarErroGitHub(error).message)
-        }
+            }),
+            {
+                loading: updatingConnection
+                    ? "Atualizando conexão GitHub..."
+                    : "Adicionando conexão GitHub...",
+                success: () => {
+                    resetForm()
+                    return updatingConnection
+                        ? "Conexão atualizada."
+                        : "Conexão GitHub adicionada."
+                },
+                error: (error) => normalizarErroGitHub(error).message,
+            }
+        )
     }
 
-    const test = async (id: string) => {
-        try {
-            const connection = await testConnection({ connectionId: id })
+    const test = (id: string) => {
+        const testPromise = testConnection({ connectionId: id }).then((connection) => {
             if (connection.status === Enum.StatusIntegracao.Erro) {
-                toast.error(connection.erro ?? "A conexão apresentou um erro.")
-                return
+                return Promise.reject({
+                    code: "GITHUB_CONEXAO_INVALIDA",
+                    message: connection.erro ?? "A conexão apresentou um erro.",
+                })
             }
-            toast.success(`Conexão ${connection.nome} validada.`)
-        } catch (error) {
-            toast.error(normalizarErroGitHub(error).message)
-        }
+
+            return connection
+        })
+
+        toast.promise(testPromise, {
+            loading: "Testando conexão GitHub...",
+            success: (connection) => `Conexão ${connection.nome} validada.`,
+            error: (error) => normalizarErroGitHub(error).message,
+        })
     }
 
     const startRemove = (connection: ConexaoGitHub) => {
@@ -101,17 +115,21 @@ export const useGitHubIntegrationDialog = () => {
         setConnectionToRemove(null)
     }
 
-    const remove = async () => {
+    const remove = () => {
         if (!connectionToRemove) return
-        try {
-            await removeConnection({ connectionId: connectionToRemove.id })
-            if (connectionId === connectionToRemove.id) resetForm()
-            setModal("removerConexao", { open: false })
-            setConnectionToRemove(null)
-            toast.success("Conexão e token removidos.")
-        } catch (error) {
-            toast.error(normalizarErroGitHub(error).message)
-        }
+
+        const connection = connectionToRemove
+
+        toast.promise(removeConnection({ connectionId: connection.id }), {
+            loading: "Removendo conexão GitHub...",
+            success: () => {
+                if (connectionId === connection.id) resetForm()
+                setModal("removerConexao", { open: false })
+                setConnectionToRemove(null)
+                return "Conexão e token removidos."
+            },
+            error: (error) => normalizarErroGitHub(error).message,
+        })
     }
 
     return {
@@ -119,8 +137,6 @@ export const useGitHubIntegrationDialog = () => {
         runtimeDisponivel: possuiRuntimeTauri(),
         connections,
         isLoading: connectionsIsLoading,
-        isError: connectionsIsError,
-        error: connectionsError,
         isPending: saveConnectionIsPending || testConnectionIsPending || removeConnectionIsPending,
         removeIsPending: removeConnectionIsPending,
         connectionToRemove,
@@ -142,6 +158,5 @@ export const useGitHubIntegrationDialog = () => {
         startRemove,
         cancelRemove,
         remove,
-        retry,
     }
 }

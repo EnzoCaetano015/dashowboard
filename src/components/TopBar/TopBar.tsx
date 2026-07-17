@@ -29,10 +29,17 @@ export const TopBar = () => {
     const consultasAtivas = useIsFetching()
     const { data: integracoes = [] } = useObterIntegracoes()
 
-    const atualizarTudo = async () => {
-        await queryClient.invalidateQueries()
-        setUltimaAtualizacao(formatarAgora())
-        toast.success("Dados mockados atualizados.")
+    const atualizarTudo = () => {
+        const atualizacao = queryClient
+            .invalidateQueries({}, { throwOnError: true })
+            .then(() => setUltimaAtualizacao(formatarAgora()))
+
+        toast.promise(atualizacao, {
+            id: "atualizar-todos-os-dados",
+            loading: "Atualizando dados...",
+            success: "Dados mockados atualizados.",
+            error: "Não foi possível atualizar todos os dados.",
+        })
     }
 
     return (
@@ -112,7 +119,7 @@ export const TopBar = () => {
                 <Bell />
             </Button>
             <Button
-                onClick={() => void atualizarTudo()}
+                onClick={atualizarTudo}
                 disabled={consultasAtivas > 0}
                 className="gap-2 whitespace-nowrap"
             >

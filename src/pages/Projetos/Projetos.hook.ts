@@ -6,8 +6,6 @@ export const useProjetos = () => {
     const {
         data: projetos = [],
         isLoading: projetosIsLoading,
-        isError: projetosIsError,
-        refetch: tentarNovamente,
     } = useObterProjetos()
 
     return {
@@ -15,7 +13,5 @@ export const useProjetos = () => {
         setModal,
         projetos,
         isLoading: projetosIsLoading,
-        isError: projetosIsError,
-        tentarNovamente,
     }
 }

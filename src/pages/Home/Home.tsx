@@ -15,7 +15,6 @@ import { MetricCard } from "@/components/MetricCard/MetricCard"
 import { ProjectCard } from "@/components/ProjectCard/ProjectCard"
 import { TemplateEstado } from "@/components/TemplateEstado"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { PERIODOS_MONITORAMENTO } from "@/lib/config/monitoring"
 import { cn } from "@/lib/utils"
@@ -35,11 +34,9 @@ export const HomePage = () => {
         metricas,
         totalProjetos,
         isLoading,
-        isError,
         isFetching,
         setPeriodo,
         alterarFiltro,
-        tentarNovamente,
     } = useHome()
 
     return (
@@ -81,12 +78,11 @@ export const HomePage = () => {
                     skeleton={{ quantidade: 6, orientacao: "horizontal" }}
                     className="**:data-[slot=skeleton]:h-36 **:data-[slot=template-estado-skeletons]:grid-cols-2 **:data-[slot=template-estado-skeletons]:md:grid-cols-3 **:data-[slot=template-estado-skeletons]:xl:grid-cols-6"
                 />
-            ) : isError ? (
-                <TemplateEstado.Erro
-                    titulo="Não foi possível carregar o dashboard"
-                    subtitulo="A consulta mockada falhou inesperadamente."
-                    Icon={AlertTriangle}
-                    acao={<Button onClick={() => void tentarNovamente()}>Tentar novamente</Button>}
+            ) : !metricas ? (
+                <TemplateEstado.Vazio
+                    titulo="Nenhum dado disponível"
+                    subtitulo="Ainda não há informações para exibir no dashboard."
+                    Icon={Boxes}
                 />
             ) : (
                 metricas && (
@@ -223,15 +219,11 @@ export const HomePage = () => {
                                 ))}
                             </div>
                         ) : (
-                            <Card className="border-dashed bg-card/50">
-                                <CardContent className="py-12 text-center">
-                                    <Search className="mx-auto size-8 text-muted-foreground" />
-                                    <h2 className="mt-3 font-medium">Nenhum projeto encontrado</h2>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Ajuste os filtros para ampliar os resultados.
-                                    </p>
-                                </CardContent>
-                            </Card>
+                            <TemplateEstado.Vazio
+                                titulo="Nenhum projeto encontrado"
+                                subtitulo="Ajuste os filtros para ampliar os resultados."
+                                Icon={Search}
+                            />
                         )}
                     </>
                 )

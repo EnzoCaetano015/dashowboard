@@ -1,10 +1,10 @@
-import { AlertTriangle } from "lucide-react"
+import { CircleQuestionMark } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
-import type { CarregandoProps, ErroProps } from "./TemplateEstado.types"
+import type { CarregandoProps, VazioProps } from "./TemplateEstado.types"
 
 export const Carregando = ({ skeleton, Icon, className, titulo, subtitulo }: CarregandoProps) => {
     const exibirCabecalho = Boolean(Icon || titulo || subtitulo)
@@ -37,10 +37,19 @@ export const Carregando = ({ skeleton, Icon, className, titulo, subtitulo }: Car
     )
 }
 
-export const Erro = ({ titulo, subtitulo, Icon = AlertTriangle, acao, className }: ErroProps) => (
-    <Card className={cn("border-destructive/40", className)}>
+export const Vazio = ({
+    titulo = "Nenhum item encontrado",
+    subtitulo = "Tente novamente ou revise os termos de busca.",
+    Icon = CircleQuestionMark,
+    acao,
+    className,
+}: VazioProps) => (
+    <Card
+        data-slot="template-estado-vazio"
+        className={cn("border-dashed bg-card/50", className)}
+    >
         <CardContent className="py-12 text-center">
-            <Icon className="mx-auto size-8 text-destructive" />
+            <Icon className="mx-auto size-8 text-muted-foreground" />
             <h2 className="mt-3 font-medium">{titulo}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{subtitulo}</p>
             {acao && <div className="mt-4 flex justify-center gap-2">{acao}</div>}

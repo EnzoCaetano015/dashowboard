@@ -19,84 +19,47 @@ export const useIntegracoes = () => {
         "integracaoVercel",
         "integracaoSupabase",
     ] as const)
+    const { data: integracoesBase = [] } = useObterIntegracoes()
     const {
-        data: integracoesBase,
-        isLoading: integracoesIsLoading,
-        isError: integracoesIsError,
-        refetch: tentarNovamente,
-    } = useObterIntegracoes()
-    const {
-        data: conexoesGitHub,
+        data: conexoesGitHub = [],
         isLoading: githubIsLoading,
-        isError: githubIsError,
-        error: githubError,
     } = useObterConexoesGitHub()
     const {
         data: conexaoVercel,
         isLoading: vercelIsLoading,
-        isError: vercelIsError,
-        error: vercelError,
     } = useObterConexaoVercel()
     const {
         data: conexaoSupabase,
         isLoading: supabaseIsLoading,
-        isError: supabaseIsError,
-        error: supabaseError,
     } = useObterConexaoSupabase()
-    const {
-        data: projetosSupabase,
-        isError: projetosSupabaseIsError,
-        error: projetosSupabaseError,
-    } = useObterProjetosSupabase(Boolean(conexaoSupabase))
+    const { data: projetosSupabase } = useObterProjetosSupabase(Boolean(conexaoSupabase))
     const runtimeDisponivel = possuiRuntimeTauri()
 
     const integracoes = useMemo(
         () => [
-            montarIntegracaoGitHub(conexoesGitHub ?? [], {
+            montarIntegracaoGitHub(conexoesGitHub, {
                 runtimeDisponivel,
                 isLoading: githubIsLoading,
-                isError: githubIsError,
-                error: githubError,
             }),
             montarIntegracaoVercel(conexaoVercel ?? null, {
                 runtimeDisponivel,
                 isLoading: vercelIsLoading,
-                isError: vercelIsError,
-                error: vercelError,
             }),
-            montarIntegracaoSupabase(
-                conexaoSupabase ?? null,
-                projetosSupabase,
-                {
-                    runtimeDisponivel,
-                    isLoading: supabaseIsLoading,
-                    isError: supabaseIsError,
-                    error: supabaseError,
-                },
-                {
-                    isError: projetosSupabaseIsError,
-                    error: projetosSupabaseError,
-                }
-            ),
-            ...(integracoesBase ?? []),
+            montarIntegracaoSupabase(conexaoSupabase ?? null, projetosSupabase, {
+                runtimeDisponivel,
+                isLoading: supabaseIsLoading,
+            }),
+            ...integracoesBase,
         ],
         [
             conexaoSupabase,
             conexaoVercel,
             conexoesGitHub,
-            githubError,
-            githubIsError,
             githubIsLoading,
             integracoesBase,
             projetosSupabase,
-            projetosSupabaseError,
-            projetosSupabaseIsError,
             runtimeDisponivel,
-            supabaseError,
-            supabaseIsError,
             supabaseIsLoading,
-            vercelError,
-            vercelIsError,
             vercelIsLoading,
         ]
     )
@@ -117,9 +80,6 @@ export const useIntegracoes = () => {
         modal,
         setModal,
         integracoes,
-        isLoading: integracoesIsLoading,
-        isError: integracoesIsError,
         abrirDialogo,
-        tentarNovamente,
     }
 }

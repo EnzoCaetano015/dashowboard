@@ -14,9 +14,7 @@ export const useHome = () => {
     const {
         data: dashboard,
         isLoading: dashboardIsLoading,
-        isError: dashboardIsError,
         isFetching: dashboardIsFetching,
-        refetch: tentarNovamente,
     } = useObterDashboard({ periodo })
 
     const projetos = dashboard?.projetos ?? []
@@ -35,10 +33,8 @@ export const useHome = () => {
         metricas: dashboard?.metricas,
         totalProjetos: projetos.length,
         isLoading: dashboardIsLoading,
-        isError: dashboardIsError,
         isFetching: dashboardIsFetching,
         setPeriodo,
         alterarFiltro,
-        tentarNovamente,
     }
 }

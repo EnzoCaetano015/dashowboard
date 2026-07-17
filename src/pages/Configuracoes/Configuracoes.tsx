@@ -29,9 +29,6 @@ export const ConfiguracoesPage = () => {
         armazenamentoIsPending,
         preferenciasIsPending,
         preferenciasIsLoading,
-        preferenciasIsError,
-        preferenciasErro,
-        tentarObterPreferenciasNovamente,
     } = useConfiguracoes()
 
     return (
@@ -49,18 +46,7 @@ export const ConfiguracoesPage = () => {
                     titulo="Carregando configurações"
                     subtitulo="Consultando as preferências salvas neste computador."
                     skeleton={{ quantidade: 6, orientacao: "horizontal" }}
-                    className="[&_[data-slot=skeleton]]:h-52"
-                />
-            ) : preferenciasIsError ? (
-                <TemplateEstado.Erro
-                    titulo="Falha ao carregar configurações"
-                    subtitulo={preferenciasErro}
-                    Icon={Settings}
-                    acao={
-                        <Button onClick={() => void tentarObterPreferenciasNovamente()}>
-                            Tentar novamente
-                        </Button>
-                    }
+                    className="**:data-[slot=skeleton]:h-52"
                 />
             ) : (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
